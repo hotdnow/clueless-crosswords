@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clueless Crosswords</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Clueless">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1b1340">
+
+<style>
+:root{
+  --bg1:#1b1340; --bg2:#4a2480; --panel:#2a1c5a; --panel2:#35247a;
+  --gold:#ffcf3f; --teal:#2ec4b6; --pink:#ff4f8b; --ink:#231a3f; --paper:#fffaf0;
+  --block:#120c2c; --text:#f6f1ff; --muted:#b9acdf; --bad:#e5384f; --good:#1fa97a;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:"Trebuchet MS","Segoe UI",system-ui,-apple-system,sans-serif;
+  color:var(--text);
+  background:radial-gradient(1200px 700px at 20% -10%,var(--bg2),transparent 60%),linear-gradient(160deg,var(--bg1),#120a2e 80%);
+  background-attachment:fixed;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;-webkit-user-select:none;
+}
+button{font:inherit;color:inherit;cursor:pointer;border:0}
+button:focus-visible,.cell:focus-visible,.chip:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.hidden{display:none!important}
+#app{max-width:1100px;margin:0 auto;padding:14px 14px 40px}
+.screen{animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* Home */
+.logo{text-align:center;margin:18px 0 6px}
+.tiles{display:inline-flex;flex-wrap:wrap;gap:4px;justify-content:center;max-width:100%}
+.tile{width:clamp(26px,5.2vw,40px);aspect-ratio:1;display:grid;place-items:center;border-radius:7px;font-weight:900;
+  font-size:clamp(15px,3vw,23px);color:var(--ink);background:var(--paper);box-shadow:0 3px 0 rgba(0,0,0,.35);position:relative}
+.tile small{position:absolute;top:2px;left:4px;font-size:.38em;font-weight:700;opacity:.55}
+.tile.t1{background:var(--gold)}.tile.t2{background:var(--teal)}.tile.t3{background:var(--pink);color:#fff}
+.tile.gap{background:transparent;box-shadow:none;width:10px}
+.tagline{text-align:center;color:var(--muted);margin:10px 0 22px;font-size:1.05rem}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:0 auto 20px;max-width:900px}
+.mode{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;background:linear-gradient(180deg,var(--panel2),var(--panel));border-radius:18px;padding:18px 18px 16px;text-align:left;
+  box-shadow:0 6px 0 rgba(0,0,0,.35);transition:transform .12s}
+.mode:hover{transform:translateY(-3px)}
+.mode:active{transform:translateY(1px)}
+.mode h3{margin:0 0 4px;font-size:1.35rem}
+.mode p{margin:0;color:var(--muted);font-size:.95rem}
+.mode .badge{display:inline-block;margin-bottom:8px;background:var(--gold);color:var(--ink);font-weight:800;font-size:.78rem;padding:3px 9px;border-radius:99px}
+.mode.blitz .badge{background:var(--pink);color:#fff}.mode.mini .badge{background:var(--teal)}
+.row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin:10px 0}
+.seg{display:inline-flex;background:var(--panel);border-radius:99px;padding:4px}
+.seg button{background:transparent;padding:8px 16px;border-radius:99px;font-weight:700;color:var(--muted)}
+.seg button.on{background:var(--gold);color:var(--ink)}
+.lbl{color:var(--muted);font-size:.9rem;margin-right:4px}
+.btn{background:var(--panel2);padding:10px 16px;border-radius:12px;font-weight:700;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+.btn:active{transform:translateY(2px);box-shadow:none}
+.btn.primary{background:var(--gold);color:var(--ink)}
+.btn.small{padding:7px 12px;font-size:.9rem}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+
+/* Game */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.topbar h2{margin:0;font-size:1.05rem;text-align:center;flex:1}
+.topbar h2 small{display:block;color:var(--muted);font-weight:400;font-size:.8rem}
+.info{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.stat{background:var(--panel);border-radius:12px;padding:7px 6px;text-align:center}
+.stat b{display:block;font-size:1.25rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.stat.hit{background:var(--bad)}.stat.hit span{color:#fff}
+.stat.btnstat{background:var(--teal);color:var(--ink);cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+.stat.btnstat span{color:#0b3b36}
+.stat.btnstat[disabled]{opacity:.5}
+.meter{height:8px;background:var(--panel);border-radius:99px;overflow:hidden;margin:0 0 10px}
+.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--pink));transition:width .2s linear}
+.play{display:flex;flex-wrap:wrap;gap:16px;justify-content:center;align-items:flex-start}
+.boardwrap{position:relative}
+.board{--bw:min(94vw,56vh,620px);--n:11;width:var(--bw);height:var(--bw);display:grid;gap:2px;padding:5px;background:var(--pink);border-radius:14px;
+  box-shadow:0 8px 0 rgba(0,0,0,.35)}
+.board.n5{--bw:min(88vw,52vh,420px);--n:5;gap:3px}
+.cell{position:relative;border-radius:4px;display:grid;place-items:center;min-width:0;min-height:0}
+.cell.block{background:var(--block)}
+.cell.white{background:var(--paper);color:var(--ink);cursor:pointer}
+.cell .n{position:absolute;top:2px;left:3px;font-size:calc(var(--bw) / var(--n) * .27);font-weight:700;color:#6b5f93;line-height:1}
+.cell .l{font-size:calc(var(--bw) / var(--n) * .56);font-weight:800;line-height:1;padding-top:.12em}
+.cell.same{background:#ffe9a6}
+.cell.sel{background:var(--gold);box-shadow:inset 0 0 0 3px var(--ink)}
+.cell.given .l{color:#0d7f74}
+.cell.hint .l{color:#b4237a}
+.cell.pop{animation:pop .35s}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.18);background:#9df0c7}100%{transform:scale(1)}}
+.cell.bad{animation:shake .35s;background:#ffb3bd}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.pause{position:absolute;inset:0;border-radius:14px;background:rgba(18,10,46,.96);display:grid;place-items:center;text-align:center;z-index:5;cursor:pointer}
+.side{display:flex;flex-direction:column;gap:12px;width:min(94vw,520px)}
+.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:5px}
+.chip{background:var(--panel);border-radius:8px;padding:3px 0 4px;text-align:center;cursor:pointer;line-height:1.1}
+.chip b{display:block;font-size:.72rem;color:var(--muted);font-weight:700}
+.chip i{display:block;font-style:normal;font-weight:800;font-size:1.05rem;min-height:1.2em;color:var(--gold)}
+.chip.on{outline:2px solid var(--gold)}
+.chip.given i{color:var(--teal)}
+.kb{display:flex;flex-direction:column;gap:6px;align-items:center}
+.kbrow{display:flex;gap:5px;width:100%;justify-content:center}
+.key{flex:1;max-width:48px;min-width:0;height:46px;border-radius:9px;background:var(--panel2);font-weight:800;font-size:1.05rem;box-shadow:0 3px 0 rgba(0,0,0,.35)}
+.key:active{transform:translateY(2px);box-shadow:none}
+.key[disabled]{opacity:.25;cursor:default;box-shadow:none}
+.hint-line{color:var(--muted);font-size:.85rem;text-align:center}
+
+/* Stats / achievements */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0}
+.card{background:var(--panel);border-radius:14px;padding:12px;text-align:center}
+.card b{display:block;font-size:1.5rem;color:var(--gold);font-variant-numeric:tabular-nums}
+.card span{font-size:.8rem;color:var(--muted)}
+.ach{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin:14px 0}
+.a{background:var(--panel);border-radius:14px;padding:12px;opacity:.55}
+.a.done{opacity:1;background:linear-gradient(180deg,var(--panel2),var(--panel));outline:2px solid var(--gold)}
+.a b{display:block}.a span{font-size:.85rem;color:var(--muted)}
+.a .bar{height:6px;background:rgba(255,255,255,.12);border-radius:9px;margin-top:8px;overflow:hidden}
+.a .bar i{display:block;height:100%;background:var(--teal)}
+
+/* Modal / toast */
+#modal{position:fixed;inset:0;background:rgba(10,6,28,.72);display:grid;place-items:center;z-index:50;padding:16px}
+.dlg{background:linear-gradient(180deg,var(--panel2),var(--panel));border-radius:20px;padding:22px;max-width:460px;width:100%;box-shadow:0 10px 0 rgba(0,0,0,.35)}
+.dlg h2{margin:0 0 8px}.dlg p,.dlg li{color:#e5dcff;line-height:1.45}
+.dlg ul{padding-left:20px}
+.dlg .row{justify-content:flex-end;margin-top:14px}
+.big{font-size:2.4rem;font-weight:900;color:var(--gold);text-align:center;margin:6px 0}
+.kv{display:grid;grid-template-columns:1fr auto;gap:4px 14px;margin:8px 0}
+.kv span{color:var(--muted)}.kv b{text-align:right}
+#toasts{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:80;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
+.toast{background:var(--ink);border:2px solid var(--gold);padding:8px 14px;border-radius:12px;font-weight:700;animation:fade .2s;max-width:90vw;text-align:center}
+.toast.err{border-color:var(--bad)}
+#confetti i{position:fixed;top:-12px;width:10px;height:14px;z-index:60;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+@media (min-width:900px){
+  .board{--bw:min(62vh,620px)}
+  .board.n5{--bw:min(56vh,440px)}
+  .side{width:420px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <section id="home" class="screen">
+    <div class="logo"><div class="tiles" id="logoTiles" aria-label="Clueless Crosswords"></div></div>
+    <p class="tagline">Every letter is a number. There are no clues. Crack the code!</p>
+    <div class="modes">
+      <button class="mode" data-mode="classic"><span class="badge">11 × 11</span><h3>Classic</h3><p>Plain, clueless crossword goodness. Take your time.</p></button>
+      <button class="mode blitz" data-mode="blitz"><span class="badge">11 × 11</span><h3>Blitz</h3><p>Beat the clock. You lose 300 points every 20 seconds.</p></button>
+      <button class="mode mini" data-mode="mini"><span class="badge">5 × 5</span><h3>Mini</h3><p>Short games on a small grid.</p></button>
+    </div>
+    <div class="row"><span class="lbl">Letters revealed at start:</span>
+      <div class="seg" id="diffSeg"><button data-d="easy">Many</button><button data-d="normal">Some</button><button data-d="hard">Few</button></div>
+    </div>
+    <div class="row">
+      <button class="btn" id="btnStats">Stats</button>
+      <button class="btn" id="btnAch">Trophies</button>
+      <button class="btn" id="btnHow">How to play</button>
+      <button class="btn" id="btnSound">Sound: on</button>
+    </div>
+  </section>
+
+  <section id="game" class="screen hidden">
+    <div class="topbar">
+      <button class="btn small" id="gHome">← Home</button>
+      <h2 id="gTitle">Classic<small id="gSub"></small></h2>
+      <button class="btn small" id="gPause">Pause</button>
+    </div>
+    <div class="info">
+      <div class="stat"><b id="iScore">0</b><span>Score</span></div>
+      <div class="stat"><b id="iTime">0:00</b><span>Time</span></div>
+      <div class="stat"><b id="iMist">0</b><span>Mistakes</span></div>
+      <button class="stat btnstat" id="iHint"><b id="iHintN">0</b><span>Hint</span></button>
+    </div>
+    <div class="meter hidden" id="penMeter" title="Time until the next 300-point penalty"><i id="penBar"></i></div>
+    <div class="play">
+      <div class="boardwrap">
+        <div class="board" id="board" role="grid" aria-label="Crossword grid"></div>
+        <div class="pause hidden" id="pauseOv"><div><h2>Paused</h2><p>Tap to resume</p></div></div>
+      </div>
+      <div class="side">
+        <div class="strip" id="strip" aria-label="Number to letter key"></div>
+        <div class="kb" id="kb"></div>
+        <div class="hint-line">Pick a square, then type a letter. Arrow keys move. Same number = same letter.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="stats" class="screen hidden">
+    <div class="topbar"><button class="btn small" data-back>← Home</button><h2>Your stats</h2><span style="width:80px"></span></div>
+    <div class="cards" id="statCards"></div>
+  </section>
+
+  <section id="ach" class="screen hidden">
+    <div class="topbar"><button class="btn small" data-back>← Home</button><h2>Trophies</h2><span style="width:80px"></span></div>
+    <div class="ach" id="achList"></div>
+  </section>
+</div>
+
+<div id="modal" class="hidden" role="dialog" aria-modal="true"><div class="dlg" id="dlg"></div></div>
+<div id="toasts" aria-live="polite"></div>
+<div id="confetti"></div>
+
+<script>
+(function(){
+'use strict';
+var PUZ = {"classic":["dye..oral..oops.polishsuit.stance..cam...ear...ion.tar..mandatory..abs.tax...bro...pit..isabel.nounthrone.sofa..dogs..los","god.shri...ana.heir...performing...tar..soil...dee..ufoassessmentsboo..tel...saul..ask...presidents...taco.owe...stew.ton","doo...scoopall...kappameds.mister...eye.air.fiscal..malempty.crateear..mailed.gif.abs...ninety.editanger...ashmessy...shy","ned...van..aye..wipes.send.input....opt..tee.titan..radfan.wen.adsart..sadly.age..spy....erase.eats.tired..lap..met...lea",".lou..lad..soup.wiki..eats.alaskaads.try.cab.stew..hits..ago.dip..mono..idle.aid.bag.innclimax.undo..nose.feet..gee..odd.","per.scars..aye.parity.mel.armored.dye...tear...ages.shy..origins..bar.fore...evil...doc.digital.woo.divine.elf..nests.def","...nut..ufo..wages.nunprophet.delren..namelyodd...mars...eds.pew...trap...anysalmon..toeaka.keepersgen.eager..and..roe...","..pam...heh.japan.form.intro.roamshe..shop..pal..tug...ads.tag.map...owl..are..blog..ripglad.image.airs.civil.les...dan..","res...tap..ava.sherry.negotiation.radar..sue...dye.pond.gel...ing.ally.set...kai..lacks.astonishing.senate.tao..sen...spa","vin.ram.ranisolate.ecodonated.set..eye.sat..lit....nameache...yuandeer....reg..lab.faa..ale.eternalmis.shuttleabs.ted.sad",".scrub..gel.chase.logoproceedingslaser.one..ape..log...yen.dom.dev...you..eve..dew.hatesarrangementnoah.erect.new..nests.","dam...gel..open..existrotor.mafiaslate..memeall.adds...los.doo.ace...eyes.moshard..eventavail.silvamatte..diet..est...aye","cat.eat.palago.via.anamethodology.saul..ill...levy.toe.....ear.....gas.yuan...are..iron.emergenciesyen.ace.sriera.pod.eds","sup.das.alauniform.linsilence.benhole..loud.ins..plum.....twist.....grin..pam.toys..darepar.desireseng.originsage.man.say",".scrap.tie..these.acnesought.redshon...midstelk..gif.....satisfy.....wig..edsalias...liemodi.coolerpoet.inlet..pas.seeds.","temp...hat.idea...ale.limit.tying.terror.sur....uni.oreash.sim.newche.tom....tea.energy.sided.delay.led...sure.ads...tens","mead...flatacne..juiceconfederate...edit.bun...age..las.tate.fuel.pol..gin...ala.seas...percentagesadmin..fadeloss...else","...amp..sky..glee.acrepartnershipare..ropes.see..seed...ant...nut...heap..led.horns..isotournamentseasy.lang..axe..med...",".eco...amir.thug.placephoto.rulesuni.atom...pic..won....certified....own..dee...list.instools.orbitinlet.role.peer...wed.","..tear.sub...hale.psi.haired.ringeng...bingohaha.ranged...bring...gossip.sangopted...maeteen.stripe.rec.keen...ape.info..","...ren.ama.canada.veilorigin.acrewig.tao.hes.aha..load...two.don...amen..his.ala.sew.sherory.commonknee.housed.est.odd...","...sis..cap.chunk..ecoalumni.antsper...ons..par..onto..sri.owe.raj..call..spa..add...hadbins.retireuse..adapt.dos..psi...","...ups..abs.laser..leatechnicallyrare..ivy..over.ate...yes.fly.ear...doe.able..tor..loopprotectionsroe..awake.eds..mos...",".gee...ash.slam..ammo.aura.claim.delight.lab...lee..egoodd.mac.dewwee..pas...leg.derives.prior.dive.lens..ever.yen...son.","its...warp.vol..honor.yea..annual..blur..tie...amp..estprism.mosesion..def...gov..info..sticks..ana.ethic..kat.dean...she","lee..crew..exam.auroraacre.teamedkelly..sanssly.often......roe......poker.tabstar..mariaharbor.nessentire.yale..step..ted","mag.pre.proago.res.hansen.act.all..nay...spy..ames.heh....irony....lad.nope..dip...den..amp.mud.eratil.one.monate.did.yen",".essay..nun.ample.tunatrials.antsill...also.eye..ave.....sarcasm.....mae..icy.hood...chetown.weakenhong.ashes.ops..stays.","..tie...chi.soda...lasminers.oathanna.hands.ice..eve...les.ala.pro...art..raw.spree.sailcook.rapidshue...mess.apt...ace..",".tin..ups..nana..polararchaeologyyah.inn.pie...and.gel..sly...use..tee.los...era.tai.spadisciplinessperm..sank..dye..ops.","sea....two.apt...shirepimp.yields.cortex.let..soap.air...psi.ann...che.sing..she.almond.piracy.yeahalive...sri.ice....set","cis.....opsatlas.pausepsychiatric...rinse...accept..pregoa.sew.heyopt..native...width...demonstrateicons.superdom.....pea","..pan..ref.space.mediarestrainingits.vis.bio...per.alt..bra...tee..row.roe...pen.sup.seasentimentalidiot.route.see..add..","..cape..fun.tales..apecarpet.fistaxis..car..pin..bus.....gazette.....moe..ago..geo..userpros.shrinehan..eagle.ing..they..",".rid...tad.bored..acidagony.litrenun.era.sew.eye.awe......lying......ken.god.ace.ash.renlover.indiaames..teeth.ant...try.","..mad...flu.tape...repwhites.sinsain.dumped.set..main...fair.ends...idea..sue.knocks.hidhail.awaitsinn...apps.meg...yes..",".tap..mar...era..alivehair.unitedessays.setssee.auto......slain......tell.alahear.ledgeroccupy.urgenotch..sea...ski..tel.","..var...tar.casa..line.unit.saladgrid.pen...isle.leap..gel.oak.ray..ally.rose...ads.asksshows.pipe.earn..used.ate...per..","rad...awaitones..lauravice.terroremerge.san.ren.alma.....thy.owe.....used.dam.mas.desiredepths.atomample..losedoses...res","cow.ash.carana.the.olebenches.mis...ala..bee...merchant.poet.lots.colleges...old..rat...lie.marshalits.ace.owenet.ser.gee","but...gosh.uni..porterstep.overlytories..ape...patrons...respond...pistols...bid..needleupdate.trayyelled..ate.read...wed",".ned...acts.oven..shoe.televisiondin.tore...act..lit...yes.bus.ski...cam..eat...obey.tisrepresents.acre..tale.toes...per.","sap..ama...ufo..valve.prospective.oral..oven...fur..ing..desired..awe..pin...data..oval.stereotypes.trend..ear...add..ski","onto..put..reap..user.edge..below...rom.demo..gala..carvar.era.oneare..imam..seam.app...enter..plan.alma..lana..yep..exam","..sir..data..toe..amenabandonmentbon..least.sic..dog.....est.net.....toy..owe.shame..ladfootballersidle..aid..rays..geo..","mid...left.ace..williecis.bankers.newly..wet.greasy......ted.owe......equals.ago..until.handbag.taballied..eve.eyed...set","you....shipenter.stoleaside.eagle..linear...suited..opsaft.win.beetoy..talent...cosmos..papal.ericaalone.setupmade....yet","won.hes.sheapology.iosstrings.rottemp..tied.eds..wet......beams......ons..ava.mind..slabsec.ideallypro.nucleusyen.geo.yes",".polar..yahcapita..axeopened.areamen..amidstpre.bred.....rue.ask.....sect.estcamera..ecoliar.shapesads..tokensyes..start.",".hotel..set.arena.shah.rings.ware.bet..par..mon..hotelsout.lap.hahdramas..owe..tow..fly.trio.trade.hood.outer.yen..peers.","..strap.rum.speeds.use.classifiedsea....and.ins.rant...meh.ole.pre...swat.rig.goa....ingsupporting.are.points.nun.teens..","afro...cut.keep..fish.advertisers...noir.lie..kemp..eve.vid...use.fin..owns..leg.apes...understands.norm..fail.ama...emmy",".ice...road.rods..altomouse.aidesann.ends...mis..idea..ace.ins.she..lent..sox...ache.unicloth.comethare..ones.amen...est.","...iso.bel..titan.axe.prospectiveain...loserlos..mantra....pad....pigeon..braideas...eatcontemplate.lie.users..ser.dis...","gel....pageole...urgeddates.poets.stains....sturdy..tedpic.elk.eveace..ordeal....onions.novel.snailaward...goameta....end","ace.own.charod.foe.hateng.forgiveage...vale..odd.resin....obese....souls.sup..cube...robfantasy.isoarc.cue.newrye.hes.eds","...hop.icy..flaws.soakalumni.ablemic...abbeyark..eve....typically....iso..oohsmash...cuepint.oscarsalto.nails..oil.eds...","..lee.pow...soda.opiumbeast.tenserad..rangedale..ate.....discord.....due..ribravens..acealias.armedtable.load...est.les..","chi..urge..hit..neuralarea.damagetempted.sen...ear..est..existed..arm..toy...lip.carefulpoison.donestrand..its..eyes..lot",".cry.god....roe.aurorabeta.staredretro..medsape.kara.....nearest.....dyed.radshri..shaperouter.ovalignore.sir....rag.est.","dow....dudeave.stainedmar.arising.lender.tie...elk.les...soy.red...pen.mon...tel.meadow.address.dimbrought.onesome....ren",".cis....add.amir...tiestate..alanpeg.distantare..those....sleep....steam..repamongst.axeneat..indianas...suit.art....nos.","cheap...monleave...eveentertainerace..aroundren..ben.......ala.......ole..rawassist..egophilosopherpod...dranksee...debts",".scope.foe.gluten.edgelasted.logsunto..worstego..sen.....monkeys.....way..eargiant..hereacre.brokenpeer.repeat.das.overs.","cab.ana.tinale.mandateson.annexedtuna...sim..dynamics.....niece.....contents..bay...ductalready.taigoodbye.oleowl.sea.res","..prep..pet.dragon.hah.repositorygod...got..uni..shoot.sec.pit.gag.stern..rue..iso...agophotograph.san.fought.its..obey..","..see...propledge..rapsensor.vetsits..aside..sic..are....top.pac....ice..led..ivory..seaaria.amusedlot..honorsany...sir..","bra..ads...ion..norms.generations..aye...too...elf..owlrip.yes.ryeons..wed...any...nam..recruitment.rhino..tea...dis..ate","sal.....byeexile..tiedweber..oops...taken...tor..asylumawe.art.egoinform..she...reach...saga..hallsevil..emailreg.....spy",".mel..ops..valid.phaseinitiativessit.eve.eat.les.eds....ash...opt....egg.law.aha.out.serpermanentlytrial.nerve..ads..dye.",".mat...ace..ana.onionsprob.warmthain.any.prelayer..ray...mac.var...hot..owinglou.owl.soyinsane.formpollen.ant..rye...ash.","...crab.age..coalition.downloadedbra....les.rot.tool...ops.run.sat...tyre.ale.iso....laxadaptation.sensation..has.been...","..tom..otto..rue..prep.warn.leads.ins..ann..ads.add.srilea.lie.gasarc.gen.eco..tea..one.abide.ends.frog..ate..tone..tor..","jaw.apt.avaala.she.sicretaliation..tie..idle...new.pea.....pam.....far.rib...else..soy..discussionsgee.pee.gapest.sad.aha","..mad..flu..tile.doingcollaborateowl.lag.bitsniper.til...our.pol...ann.tariffala.tar.taineighboringarray.does..tel..yes..","..plug.okay.quasi.mere.upper.eyeslip..lag...ate..flat..met.art.old..shri..roe...ace..rowtrap.notes.harp.diane.emmy.slit..","fan...flashoval..lancegate.hunger...era.gun.ate.oil.leghen.pro.areart.eco.rye.red.ups...parrot.haulocean..emmawedge...amp","mob..tow...eve.newest.leg.illicit.ride..rare.snack..rex...deity...awe..dress.noah..upon.arsenal.lab.merely.aka...owe..ren",".cam.and...logo.neuralacid.adherebonus...ama..glee.eds....acres....jar.alto..sol...kappapharma.tearannual.eric...gee.san.","..nap..spa...eco..pairjewels.rideouts.neededbro..aye...son.ape.ads...lip..rawinsure.sofaloan.deputyling..vin...res..end..","..clad..rat.rouge.zerolaurel.onceacne..doo..kit.tor.vanear.era.agosly.reg.ted..sim..winechic.shootshide.earns.ape..asks..","...sec.let...coco.acidphilosopherout...storyshe.taco......recap......user.akaaudit...capsponsorshiphope.pope...ned.tea...","pig.dam.alasol.era.govineffective.see...ale....dropped.....awe.....listens....ink...its.antibioticsper.rod.nappro.and.ama","sol.app.finaxe.lea.alapivotal.sly.def..apt...elf.ace.....secrets.....rot.its...ash..ton.til.offeredhop.roe.earons.tee.sky",".rib...lastlane..vistaended.ethicski.ant.eco.sense.ask....ahead....sam.dusty.mac.est.rapultra.operastout..endstyre...eds.","..rule..macscenic..egocasino.bredant...doc..mar..maths..dismissal..acted..new..tug...deepaid.striveinn..erasedtag..type..","pie..limp..ava.canary.dysfunction..torch.ego...ole..saw..sly.sat..mae..pop...ate.roles..comparisons.merged.nah..does..spy","spins...bitargue..bathcontroversy.dos.pie...fur.led.ratace.ore.eraned.tao.pre...out.ala.counsellingalps..omegares...gases","..art..sip.spree..idleloops.arielyes.tub.oak.meg.slot.....ether.....here.elf.ago.era.arcdrunk.manordose..enemy.wed..nas..",".dip..faa..rice.pillaremotionallypen.red.ole...dim.two..apes.easy..gov.bad...art.pas.taimeasurementpetals.acts..owl..chi.","..ava..add..swat..trioleaned.lendear..erasedale..less......sis......kiev..brotrance..lapearl.relicsdime..nose..nat..gus..","nap....bra.usage..yet.throat.eat....iso..cab..union.tiebinge.amongama.rotor..raw..lid....gas.events.era..email.sec....spy","..nap...sad.male...psirotary.doseuni..earnedboo..trust...ned.ego...taxis..robpolish..spaunit.eitherres...shin.est...hop..","...fed..was.china.bill.handy.onlyfor...vid..aka.hue.spares.ons.honeds.lit.ion..mad...eradiet.dwell.acne.ready.net..yet...",".ago...eat.array..snapleaked.toreann.new.nan.add.lily....for.gem....atop.dos.bet.mel.upsache.gossipthey..salty.ore...dye.",".opt..erica.lie..carolfirst.ozoneavatar.ons.sec.liar...try.eds.cha...uses.has.our.remarkmanga.termsutter..age.ghost..ned.",".rap...cat.cigar.tubeshorse.ozoneate.now.vow.sen.sewer....uncle....mania.dan.saw.cry.roeusage.userspoker.pratt.net...ish.",".sis..ash...ones.chestloser.torahunanimouslymen..art...pre.vis.aha...ben..vanendorsementdoors.sandsstone.true...res..ted.",".wit...ape.tire..arenaadolescentspen.apt.ark...eco.sly....shire....art.lie...ava.pep.louconsideringeight..oath.dee...bro.","..bay...iso.sore..noel.competencecam..not...ale.ago.rotper.bat.eraeds.ugh.pac...use..ecobiomedical.roam..cute.ask...yes..","goa.....thoorgan..chewterra.worse..its.one..arc..sneakylou.bit.tieteller..eds..tad.ran..drums.aliasaura..wannasee.....gal","..ref..mat.usual.math.pasta.islesschemes.amp...ned..sea....sip....faa..tis...odd.essenceroman.tread.bing.overs.end..led..","wig..sad...acre.kiev..rear.intel...das..ego.lou.empressava.mae.teadetails.arc.rib..tub...sober.glad..nova.hero...ten..see","...sal.awe.parity.gin.editor.oldsadd.pit.del.sir.comedy..cue.ear..crunch.eng.oil.oak.elfsnow.tissue.sue.erased.est.sky...","..drum..che.house.cool.owned.linkann...san..pol..pence.pro.now.ins.salad..dee..duh...erachic.among.hank.fancy.ing..tree..","are.store..lou.aurora.arrangement.you...acne...near.tae...tales...ape.tent...vile...uni.ambassadors.pocket.vol..white.any","..job...colstone...owetrusts.toesour..hears.pen..yard....add.tai....lieu..nat.girls..agobust.easterart...needygus...nas..",".dig..boi..jedi..lunchamen.tattoowoo.hah.eng..laid.are...ops.pre...age.asks..sri.uni.tugaccord.tinachang..ends..lee..ago.","suit..pie..anna..its..disconnect....owe.mara...sea.specmom.sri.eyeunit.eds...menu.see....substances..tea..dare..est..stat","...yen.cod...sore.aria..trademarktrek..deltahum..oil...ons.dot.pig...huh..roealgae..cantmoonlight..pond.coat...key.ear...","..left.jun..genie.onesprogressiveren...peterowe..piper....earth....scale..chaboost...yepunstoppablesite.aimed..car.near..","gus...yes..ann..mega..scan.eagles.lions..ave.elves..den...adapt...arc..guard.sur..inter.heaven.epic..wing..ava..lag...yet","..map..nat..hero..echocirculationing.reg.duestem.see....sri...lay....cap.kievadd.lib.maeprotagonistease..rant..wen..eng..","shy.lit.feepea.one.rayall.unaware.met...ant....rematch...manages...handler....arc...sun.briefly.nedran.lie.taoama.ups.ole","warp...cos.areas.harp.tenth.undo....hang.end...spa..agebed.est.leeaxe..art...mom.blah....diva.coded.used.erica.set...neon","joe...tor..era..finestterm.openly...iso..tar...sets.avetee.app.lesran.trap...egg..ins...alison.idletenant..ain..eds...ned","bel..end...user.noir..stay.greet...dee...sheore.pat.erabar.ivy.reseds.car.vetyah...eco...rigid.oils..polo.drip...ole..sea","ing.opt.taptao.pre.agesnapped.ken...ooh.ben....psi.est....pests....eye.tai....rid.old...oak.freewayuse.ain.everes.act.eat","tis...agentace...rumorrent..enemy...hop.sri.levels..anaama.eye.laybon..cradle.tea.hat...aisle..eyesposes...ughenact...moe",".net.app....ale.burger.tea.spousegimme..matsave.vapor..pen.ice.aha..tales.napchar..titlehorror.dev.anyone.lee....wed.eds.","...sun..iso.caesar.nedsupreme.tadpro...ate..all..flag...sophomore...gear..ava..inn...tedcuz.differsone.steady.did..set...","...cup.ski.unsafe.cad.sorrow.ariaedit..armor...spam.ate....uni....ala.tyre...roses..lamacopy.medium.see.agenda.end.tor...",".rams..sur.relief.promapollo.ablenan.fry.all.yea.burn.....prime.....stud.gag.art.eds.cueleak.elitestara.nicest.psi..meds.","..mom..pro.scale..huntalien..ricenun..leaned.elf.ins.....younger.....one.sis.martin..pewarea..applesing..yield.ate..end..","...bow..bye...ufo.alan..informingann..doing.dev..sand..dwell.monte..neat..ear.stash..spashortages..earn.nos...why..kat...","..see..eco.behave.non.arises.doserant.tasked...edit.its..promote..fee.tame...artist.slapairs.estate.col.deeper.ale..ads..","dub...aha..ana...buttsdirt.ashore.ocean..mil.nanny..sol....two....eng..areas.doo..yeast.guards.thatenter...ego..spy...sew","rat...pie..our...anna.bra.swings..afghan.ape..foes..genacids.amendhoc..exam..ask.nailed..tigers.nun.snow...tea..gas...sly","pads....sanaliens..uforoster..broant.wit.don.gut..uni....rad.gov....bio..tin.ala.was.sonlin..petitemac..echoesare....ends",".all....alabreed...conregard.shutana.yelled..ale.goo......syrup......see.ego..leases.rubbury.sewageuni...nichesac....get.",".aim.prof..tuna.solo..infinitely.stone...les...sea..oakate.dig.whymax..def...axe...tides.impressive..pray.tree..tone.ser.","..rate..map.devon..eradefends.actufo...tan..her..lewis..amusement..taste..geo..tea...lapkai.barrelsego..guess.non..ends..","..din...sat..ice...pre.crow..vega.ren.grace.hoc..outingact.son.atedoomed..lin.draws.win.dial..ease.alt...art..see...res..","low...its..iris..leavemanipulatedelders..ing...gee..ruesome...seesape..apt...let..choosetraditionalsalon..legs..son...see",".scan..war.score.setuparmed.paolocub..harmed.boi.iris.....siren.....lose.gov.spells..batalgae.siegemeats.issue.ale..thee.","...sec..sew...crop.age.charlestonpaolo.tee..insert.ala.cat.sad.lip.lin.decide..led.meterguidelines.aft.east...soy..yes...",".uni...weed.nos..hencealto.meadowlea.lest...tablet.his..slightest..hen.aurora...kang.lipoffice.lakeplant..ate.sung...yes.","..kid...cha.tiny..boon.insecurityadd..open..gal..low...ole.non.cis...sun..ave..sane..nottranslator.hind..copy.egg...toy..","..casa..altatomic.treemenace.urgepas...ana...mug.akin....mustang....pale.gel...try...mudsaid.camerapros.openedyen..lent..",".turf..col.owner..ariawisdom.millest.gem.eye.top.lawn....pay.get....plug.bam.ava.map.tilrobe.latinotill..shout.def..sons.","pan..ton...ava..erasedran.example.iced.lease.lyric..med...atoms...gel..weeks.exits.stay.militia.prostyles..pup...two..apt",".est.pairs.mali.inlet.originally.elder...ala...rig..tedpsi.son.edsown..aid...los...craft.remarkable.drama.flex.straw.tee.",".cub....absdare.cardiourge.alisonore.grab....into..bob..echo.four..rye..unto....odor.laysacred.hideprayed.onesamp....per.","..rom.sac....ana.tram.aides.actedpsi.kat.alathou.guests..ancient..racial.drawaft.sec.olewrist.ample.oval.nah....eye.tee..",".jam..eat..coco..rye..hike.sierraann.sic.res.socks.nick..why.nat..able.yahoo.roe.las.rubmidway.pine..gin..race..egg..ole.",".halls..ned.email.nova.abbey.amesava...psi..cis.use.nahres.pea.apeera.oak.toe..dan...illbrow.taboo.rare.along.ops..daisy.","..oak...ughcarve.canoeorientationlee..opt...ann..psi....ate...cam....aft..cab...roe..tieevaluationsvinyl.worstest...ons..","...aha..amp..limb..tao.commanderslou..nay...end..diets.age.col.rom.organ..ala...arm..dannewsletter.ace..need..pod..tae...","wen...sic..ava..senatelet.tacklesknight..catstore..mum...nan.sol...dad..usagegel..restedunified.ingmyself..ore..tel...ned",".dye...ate.poor..arenaengagementspea.ala.ark...gif.any...wen.sit...doo.gym...own.don.logradioactiveerect..imam.fry...pal.",".babe...funpoles...anaadult.auditdim..upset.sen..see....dismissal....tan..mom.among..evecrops.islesaid...tailstai...sway.",".dot..plus.diva..sept.even.wishedlength..era...ore..letegg.yep.doepre..lab...ion..enablecutter.noon.plea..grad.sent..sen.","..lid...tanirony...rueledge.twinslag..sheets.rev.cubs.....image.....user.rep.binary..defarise.wagerbot...everyany...das..",".salts..ale.troop..micsamurai.oohago...dunnoper..songs....chili....group..jungross...isorap.heathereve..swear.yes..tends.","app.pills..car.snoop..two.issue...spa....cad..opted.tryparticipatealt.sonic..tai....tug...omega.lay..novel.ate..smell.res","..ala.ago..arson.versepossibilitypee.mad.gee..stem.aim..psi...ins..amp.nana..ate.rom.taifingerprinttotal.lands..sly.eng..","buds...pep.units..iso.disrespect...cameo.ate...pint.peraces...veramax.mali...pup.alert...colleagues.use..kinda.sea...nest",".bar....pup.one..omega.los..pathstimeless...avatar.sam.oil.may.var.aye.severe...rhetoricratio..can.enact..age.dye....les.","..till..boiamelia.burnworlds.usesfur...psi..use..john..les.cod.era..troy..sub..ran...slywait.flamesalas.roverssal..yuan..","actor...procarve..chartried..ripe.run.ego...sim..dippedpep.egg.axeadhere..lin...mad.hes.them..gottaeasy..optedant...deeds","bay.apt.offage.due.viatransparent.era..sends.est.sec.......for.......dry.sup.maria..ana.orientationsin.col.oletag.opt.nod",".item..sis..mega..antibacon.aliasugh...mottomen..mini..psi.jar.act..coop..toostink...ivyerase.savestune..over..est..last.",".van..ops..meme..oops.atmosphericsooner.tell....las.avamac.lit.dayall.sri....spit.inmatetheoretical.anna..neck..ted..iso.","...mag..dad.plate.pile.rodeo.isle.one..acre.ace.gig.ughmel.roe.piepsi.end.tan.snow..ain.pier.havoc.hose.urine.ins..ted...","...das.sat...grip.hiresalary.oralitem..deedssenator.dee...sales...off.rewardskarma..lieuarea.doubleyear.outs...sky.ore...",".eds...ala.straw..vasephotographsyen.woo.set.res.roses....anime....panel.ned.aim.alt.leemaintaininganna..patio.ooh...yes.","....uni.bro...ages.lin.lighthousebone...wee.ant.sheep..dee.air.rum..gamma.iso.arc...onesstatements.pot.gays...ape.gee....","..mos...sam..era..aria.pretendinggag..cad...ate.ton.aresir.inn.sonpos.toy.sad...cam..adssynonymous.peas..all..ash...let..","..hon..gurupaolo.conesalternativepet..art...are..see....trap.snow....sat..ran...spa..agoappearancespearl.falseeast..the..","..mas..amp.scores.lieuninety.onesark..mantleice..big...lay.dom.umm...mal..taebikini..endacid.shariadots.mutual.net..hes..","..amp..ava.actor..longprobabilitypam.yes.dim.vis.gov....eco...ion....yea.due.ins.sit.tedcountrysideeuro..rinse.net..eng..","..also..ashobtain..maeprogressivetap...panel....periods...model...remorse....oxide...absministerialale..energyned..adds..","arc..set...sol..mara..heir.arabic..peer.much...fats.see.postponed.law.shoe...acne.ones..steven.dusk..rice..cha...los..hey","alas..avid.diva..cane.seal.termed...sri..ama...aim..tedwet.dos.edsaxe..tho...gem..hes...employ.care.peel..apes.tree..rest","lee...alas.oval..dome.were..doors...tad.knit.jesse..googut.kid.supash..tests.star.yep...pines..alma.code..mean.else...ala","bros..ark..aura..kai..reef.dawn.....age..estdegree..tooavail.heirsmet..reactspre..ins.....warp.item..ala..lore..yep..yeah","..thru.ran..cheap.odoryields.modeatop..malesher..cone....empress....tory..cosarise..genesect.stanceheal.paste..fly.apps..","dip.fit....you.loaded.encountered.ski..twice...logo.conlas.boo.artout.josh...adore..ego.directorate.texted.its....sad.not","...taps.rum.amelia.ego.sealed.alespa....spy.ren.baba...intercepted...noel.yay.did....prebio.beaten.yen.rapids.eds.arts...","ten.....ramego...slaveagile.racer..realising...are..suetransmittedres..one...appointed..clips.onionearth...aledye.....let","map..roar..ice..arrestsend.temple.seam...roe..trim.few...reduces...bad.gate..alt...tune.raided.studchoice..era..neon..don","joe...alas.ann...rest.wedge.mason.solve..eve..reel..set..servers..ave..exam..rim..siren.treat.tenor.unto...tao.stem...she","..mod..ugh.brewer.prosreally.sameads.les.net.sub..had....rue.elf....eds..las.dam.tub.teaarea.fathersing.orient.ate..ser..",".sad...ala.deco..icon.amen.oceansdisable.doe...tie..eye..men.bud..eve..yen...ain.ballotsrotary.earl.lana..stay.alt...shy.","..rom...dom.repay..evebattles.vetera..solar.del...ness...its.sat...bail...ape.atlas..tansri.markingeco..means.can...gig..","tel.psi.fanhue.run.lieera.ops.edsmoss..asset.she.inch.....eater.....adds.ufo.marsh..blurate.eye.oneson.reg.acespa.eng.ted",".ugh..tea..tread.rams.windy.urbanone.est.ana.era.whisky..artists..asleep.sal.phi.new.dampizza.alone.neon.torch..dot..use.","..hid..egg.arena..areasalts..tanghype..usher...rays.avecos.toe.maeapt.ours...stump..piestide..litresoil..ocean.not..gym..","wet.....edsashes...loustrap.climb..era.ram..ala..toxinsdot.few.napsteven..any..nod.apt..fails.reigninn...canoetag.....got","zip...mapleones..acresokay.intact...nod.sit.rescue..sumape.tap.erapin..leases.saw.lex...rotary.imamadore..soleterms...den","..dad...mad.mere..demo.evil.organ.sis.spy...essence.aregee.ear.senodd.wrapped...ref.rev.radar.mice.alan..acts.tan...les..","..mesa..tea.layer..ragdirectorateoaks..dads.pre..modi..est.war.tao..peas..inn.alan..conesmartphonespic..relax.are..oral..","..peg..ana.agile.iron.confrontingeat.mug.see...var.text..ton.was..drew.six...aha.wat.skisympathetic.mean.irony.eds..nap..","def.amp.spyera.nas.usevacancy.pin.sin..che...elk..her....ill.elf....tea..mic...ask..eco.kat.editingeye.run.agened.son.lot","han....has.eve.drainedradioactive...dent.men.lee..span..ala...alt..best..ish.sec.yarn...alternativepercent.sad.doo....ons","put..char..ash.lionel.ser.escapes..eye...ugh.mae....biometa...slowate....kin.ran...pic..climate.ala.sniper.non..glen..sun","..had...vat.menu..timegarage.ovenore..demon.lib.til....day.its.ads....die.pep.haven..oneyoga.garlicuser..calm.med...ego..",".pro.hush...rap.unpaidpotentiallyamino..coletoo.tree......heard......edge.shyroar..canoeinnovationsdenied.mod...acts.spa.","..hey...das..are..mail.snap.jenny.ads..egg..clients.egohoc.you.repana.lessons..pro..cue.aspen.mass.fees..all..tad...spy..","tow..van...ava..ice...barn.newestsleepy..spa..haul..tub.corn.twin.lou..roam..ads..heraldweekly.stay...aim..eve...tee..sad",".tae..tai..manga.ann..actor.pandapos.ice.ios...pee.inch..welding..heir.ark...art.bro.psiyahoo.nylon..inn.yours..ned..use.","..dee...thostern..croparcade.halttao..grant..pre.gaps....all.tel....tied.las..witty..toeshoe.easilyions..canoemas...eng..",".mos.anna...apt.boot...tea.swim..perry..rob.era.own.satant.geo.psikai.and.hen.low..enemy..nice.ore...aria.vin...lest.act.","..bye...dub..res...anaadopt..endspea..badgested..anger...coaster...matte..optwasted..useonto..basillie...ill..far...day..",".slam..rib..timed.usercanada.gleeark..tigerstee.lame.....doo.ads.....scum.eracracks..lapaura.effectpier.sauce..nas..arts.","..god..rod..true..owesbeetle.beauana..noodlelos..art...dry.ice.cat...ant..awerevise..laxavid.dammitmile..belt..led..shy..",".scam...fatstore...oletenth.wheelrats.era...ala..vast..psi.yep.row..neon..ore...art.rodespark.hopedarm...userspop...hers.",".dom..essaydate..stareinhabitantsscenes.res.her.loft.......ole.......swat.she.pre.tappedcounsellingaside..oncedense..tee.",".tis..aha..tides.pillsarena.eagerready..taxiads.issue.....knees.....wager.caphair..maybealtar.orbitmatte.needs..yen..are.","...pat.oralfemale.paceeverlastingwest..tides.ray.docs......rep......kiev.arm.since..liesideologicalglen.lovelyness.eve...","vol.sri.aleama.han.wayred.eds.ate.gen..aired.any.annex....lived....flora.ish.piano..aha.arm.ned.ainrep.ice.proads.con.est","egg..rap...deadline...streaming....dew.mar..use..salarymen.bel.diemaiden..ups..now.tea....guarantee...breeders...ten..sat",".car..pos..nope..oliveomega.edgedrex.met.mis...les.man....issue....rib.ash...mac.rye.spaarose.dwellpenal..haul..sly..ons.","jun...lose.ones..owls.bite.isles....con..nay..atom..dyeumm.hat.estfaa..tear..opt..elf....peers.roma.euro..owed.draw...eds",".gross..sip.lineup.anasovereigntyore...logo.air..too...pas.vet.ask...sea..che.shin...toespeculationpie.silent.and..bangs.","..imam..padparade.mereamidst.idolcasa..blast...modi.lea....bar....faa.eddy...angry..abletire.retainames.ageinglee..most..","atoms...wetradios.heromiddle.year.....cap...ivy..twentytao.lie.ahastudio..hey...inn.....wise.alarmsalps.lineupsly...panda",".nut.atop...one.panamastir.pistolretro...illideals.roe....cease....sue.censusrep...raiseempire.meatdiesel.egg...rock.dee.",".cab...gurufamous.onesinexpensiveann.snap...ted...pea...dev...lid...dow...rim...thee.leanationalisteven.dronesdang...gel.","jew..duh...ava.depart.wit.eastern.legal..pea..rift.pray.off...red.mart.sees..iso..paper.dinners.ned.storey.tar...tae..sly","too..lamb..alas.analogrisk.parole.view...ken.estimate.....crane.....chestnut.tai...sane.indeed.nineenergy.toss..rage..net",".nat..two..sire..ear..inexpensiveseated..goa....run.itscub.ice.netuse.law....rec..technobrotherhood..mae..amid..eds..per.","..uses..ago..nice..panmascot.dollant...decaytao..cola....payroll....prey..yumdrama...psiruby.suitedall..anti..wee..disc..","harm...est.area..ugly.scene.pools..firms.gee...lie..art..faction..mae..amp...arm.slate..grape.micro.alec..chin.yep...some","motto.mac..union.aka..melts.disk..sea.annual...love.aresac.nas.laxala.wish...mental.off..carr.claim..red.hello..yes.isles","..based.dan..alive.ufo.extremistshut...ant..ore..eng...nor.old.dad...off..eco..gif...precollegiate.awe.notch..pen.doses..","...rob..recawhile..eraneeded.scandis...ghost.rig.diane...tariffs...named.tis.sites...dasheir.makeupeco..overlysen..den...",".rum...its.lana...noelarises.gleeget.man.eng...second....per.tao....regain...psi.elf.taerose.typingodor...into.ana...gas.",".nam..chi..mali..rinseants.namingtae.rob.tao..rear.sip...nap.lea...kat.watt..pat.mom.isoorigin.avidpanel..held..geo..ask.","..mud...mug.minor.safe.initiationand..gran..def...est..drug...hero..lou...nap..nose..antpresenting.rise.dance.eds...one..","..non..pot.abide.depotkinda.introant.top.iso..half.eco....myths....cop.eats..lax.ins.nahalias.smilewidth.lifts.fee..elf..","..saul..tow.bingo.gene.enthusiasteggs..arm..gal..oil...one.sad.aha...ink..var..eco..lentempowering.rain.venus.arc..edge..","..hum..ops.abuse..net.delete.cainself.vienna...used.ugh..flu.let..aka.reef...listed.flipanti.spouse.del..error.are..ate..","...mis..big.boiled.aretoddler.sinend...ariseles..owes.....joins.....dull..romspend...avepin.enactedins.rather.tee..tea...",".air..sis..armor.ooh..drama.usersdog.jar.aye.wee.scorer...alien...spared.eat.pal.sew.whoacids.email..goo.naked..non..def.",".tab...abs.mali.bananaexaggeratedtis.rec.mad...gif.oak...ham.inn...pup.ads...ram.ago.sheevangelicalvenues.surf.den...hmm.",".pup...ace.tunes..momsarctic.ammoiso.nod.pan.eng.dial....sam.era....clap.kid.kai.nor.namicon.latinotrue..pence.est...age.","..half..paw.moral..isojackpot.thoink..owns..lie..doo...lays...shaw...ios..ice..spot..ateave.heartedmil..aloud.pal..mets..","let.joy.flyage.owe.roedoc.session..heed.hes...nap..one...ish.pod...act..its...die.mesh..smarter.ivykin.arc.pieins.bee.sat","row.ads.jobape.hen.unispa.awardedhope..keys..sox.ned....enclosure....ear.can..pops..endsprotect.suerep.rue.oreops.sen.med",".gut....icevenue...mugenables.megrev.knives.ava..grid...aim...sic...leap..art.banner.taocab.tragedyill...pollssee....dye.","vis..bra...inn.quote..eco.undergowhose...ion..pour..cos...leads...tai..drum..aid...yeastpromise.yah..laser.ole...she..ren","the..jacks.aim..await.implemented..tea...tae..yard.hymn...snowy...game.maps..eco...rep..outstanding.topic..kai.erase..eng","..cub..rub...iso.fellainterruptedtae.den.redsystem.dad....erase....ala.rewardare.aka.woodemonstratesnowy.ear...ann..dye..",".vow.snap..wipe.politeaces.analogtents...eng...era.eds....rites....can.eat...ion...ranchtagged.toresleeve.ever..reef.saw.","...hug..tow.daisy..ruecontemplateone...ren..mos..feast.art.cap.pro.shear..law..ear...aininstrumentstai..posts.spa..set...","...jam..phi..males.hut.facilitiessinks.tel..prison.aim.amp.nod.pay.sur.temple..los.soilstraditions.out.morse..one..wee...",".eds...pow.spies.laurapiece.actoract.new.ink...ads.eng...kissing...sir.add...dan.aye.mobelder.arenavalve.later.dye...mas.","wow...ramp.owe..mutualrest.emergeesteem..das...age.wen...pro.tar...tis.own...pol..votingonline.scardeacon..one.drew...nay","..bye..psi.wheel.salsahelps.psalmoil.ego.pea.rec.roe......using......zip.god.fed.est.potaging.ericaagree.cause.sew..hmm..",".spur..ice..lana..noahcapita.loreate..deeplyser..mat...ads.fit.add...fur..learegina..icyeven.loversfind..lone..les..else.","oops...tae.drama.aims.decor.peas....kept.tab..gene..eyeala.add.useper..roar..pal.loud....gave.bonds.unit.trail.eds...emmy","..aft...ren.trio..cocaphotographsres..romeo.one..oops.....shuts.....chop..thy.there..ayefriendshipsaunt..role.tea...ins..","...hit.res...mesa.expo.niche.spurlock..leoneear..oats..tho.tub.its..stir..teafaces..girlicon.broom.tips.yarn...dee.eye...",".tap..sparecole.whaleshurt.honestice.dyed....hair..ole..eddy.pros..dye..oats....apps.teaamelia.lensbarley.archstays..bye.","...fat..bot.bravo..airprominentlyrated.meh..ego..ama.....rentals.....dee..opt..age.tabooimmediatelytai..score.ser..hop...",".chart..amaguinea..sonorganic.tenash...iso..tel...sin...did...sit...goa...she..hmm...hidwat.pendingeve..loungetad..frogs.","nap.ads.letillicit.axecounter.didhugs..east.eds..psi......prism......ain..bat.limp..lushsim.prairiepea.legendsyum.eco.tee","non....spa.owe..scars.pesticides.estates.fur...ben..eraits.mar.repore..ram...sur.similar.microscope.paris..wen.sly....est","...pig..ufo.alone..nod.downloadedmon...pre..ore..deer..mel.ain.sly..ions..tae..nun...appoperations.was..aside.eds..pol...","abbas...dewprove...olepotato.soft.....flu...aka..femalevis.dig.leaethnic..est...ape.....film.rocketace...naivetee...ended",".beef..snap.axle.operasnake.cockylag..were..ing..eats..tae.gen.sam..raid..ape..alas..rombaton.agileagent.roll.node..mayo.","..saga.mud..tyler.unitcement.riceamp...savedspa..yale..hot.hut.reg..heap..sursperm...arehate.employepic.goals..act.only..",".mist...rubmanual..egoentries.flytie..alloy..art..air....cis.bam....heh..raj..radar..tonpun.hostilerig..beholdone...tony.",".mat....pub.unit..lone.sane.validsit.avid...eco..essayslam.bra.roeflyers..run...goes.antsings.hang.uses..edge.rot....ser.","yup..mas...ego.barrageall.admired.your...gas...non.sur...finance...fat.you...lou...imam.orleans.roegetaway.ion...ten..add","hut....bug.aged..nana.they.yogurt..nicer.saw...nas..ego.sign.jade.gus..sew...abs.altar..sturdy.reed.lead..envy.est....tee","lap...whoa.idol.hears.eddy.addict...ran..gee...ing..inn.coca.rant.van..bed...ill..ufo...aliens.papa.envoy.trek.deed...tea","..copy..meg.shire.yogacholesteroloak...ape..ole.owl....led.pal.spa....try.cow..tai...alaprincipallyearn.saves.eye..ones..",".scope..mum.hoped..apesenses.knotpic...pain.ale..ship..man.boi.umm..tool..lee.brow...amablah.buttonrot..usher.age..needy.","lot...pos..away.aunt..gene.until....sox.oralsap.dis.ruepsi.ole.eraaka.rim.dadmenu.ain....diner.upon..stay.nine..tor...est",".ill..ghost.load.rodeoslope.elderhes.fled...age..onset.mal.eds.are.lying..say...stem.tieshale.openseater.sire.chess..end.","..kay...kai..era..mistenemy.mathsrep..way...axe..oraclesur.try.leaessays..eat...pre..aveagree.linenguys..ace..eye...per..",".wen....ishmason...cueattractionsyea.morons.art..nun.....eat.est.....law..amp.zombie.kaidevastatingera...ringsvol....ego.",".aft.apps..draw.brew..accessoriessheet...sri..stem..sac....pod....mac..boat..ago...glassresponsible..tile.glow..seed.new.",".vet..che..page..hon..significantins.mac.boi...dan.olds..aim.ape..rope.gus...era.sur.ahasecretariat..hit..idle..eds..bel.","...nas.gem.ashore.axe.pharma.get.pest..names...here.popmac.now.tryego.desk...drums..note.era.guinea.est.offset.dee.toe...","rue..abs...ana..heads.its.calciumnotch...are...has..net..methane..spa..ego...ill...eraserelated.dom.asked..dam...ads..spy","..yah..otto.sole..nail.quarantinebuns.doo...rag.nas.samore.ape.oweser.its.cam...ave.sireaccredited.sham..nets.hers..spy..","ben.gag.masage.ore.altnos.ate.sly..tel...col...vis..owe..deepest..ape..yah...lib...gym..bar.ill.eyeuni.see.nedmos.has.ups","..che..bro.scout.drownearth.ratioadd.icy.ons...ace.urge...isles...loan.lie...ann.est.earwigan.harrysolid.elite.nor..rec..","cha.dale...hub.obey...illnesses...lee...dice...watt.marcos.mae.spaout.anna...prof...rag...projector...owed.ore...mets.peg","..arms..kit.break.genecoincidenceons...oath.deep.nor......shame......eat.dome.paul...podmindfulnessinto.gears.les..haha..","rap..rests.ala.secure.neighboring..dare..psi...mil..leg.gee...hes.gin..the...aft..year..stimulation.erased.flu.deter..ten","..has...arkavatar..beecinema..layeng.edited.see..ice.....delayed.....got..eve.scotia.seapal..ordersana..nearbydew...ant..","..cart..him.solar..oredonated.sinoff..keeps.tai...sri....she.kat....cup...ask.magic..leenot.clarityone..units.dad..baby..",".scalp..flurookie..riginmates.ishsim...poet.eco..horns...debuted...pivot..she.item...hogtai.bettingone..grapespos..gypsy.","...awe.ama.amelia.renttenant.rateodd...geniepie..ios....advocated....ale..leebrace...vanroma.upheldopen.ghosts.est.hit...","..tina.alt.caused.loudarrows.maraser....offstae.earn.....torpedo.....bats.redhint....gayaria.phrasemini.ruined.sen.eggs..","...alas.tip..score.ama.structuralglue...pam.aid.guys...spy.one.iso...coin.dew.lea...dialcombustion.ham.greet..any.hint...",".cue...sac.harsh..ill.united.stirnan.ham.amaglen.nearby...ought...coarse.eatsold.era.thopimp.slater.via..anime.end...ace.",".ios...step.turf.spare.stir.organgel.yale...ole..tie...aft.cod.cry...tom..rue...also.estpaolo.noah.under.site.pads...led.",".put....phidenis...linarises.funksit.eldest..lea.eye......panel......add.sac..nurses.boirant.radiusuni...pedroeat....net.","..flip..lib.prose.vitaalison.obeylee...stem.san..peer..odd.jew.tow..shaw..ava.they...redhair.satirealps.pleas.hes..alan..","aye...vid..next.pines.appearances..onto..raw...son..eramob.mos.estava..ups...ren..nuts..transcripts.snake.reap..any...cry","cry...usualreed..fungiidle.bondedsulfur.god.eco.nun....sew.iso.fry....tho.lee.roe.enrolllanded.oralomega..mateupset...led",".bin.ate...mama.martinokay.praisebeg.....nod..eagerly.....vague.....belongs..lou.....proaurora.gainstyled.once...eds.ask.","owe.tap.lograngers.akaintentionaledit...pay.net.odds...try.lee.row...idle.era.lot...spanconstituentact.averagetho.bye.led",".ore..bam...wave.urineinner.delayned.aid.dyegrow.the.....mileage.....nam.gameala.psi.tonfirst.lyingtempo.lent...sap..age.","ama....mamavile..perilants..anime.easter.sic.drain.sec....yeast....abs.curse.bra.strain.renal..ideaangry..temptask....dye","ama..ops...mad..nauseamid.respectolive...che.step..duo...its.sir...doo..eric.sin...atticenables.isorelies..eco...nat..sol",".god...web..oral..avid.similarityape.dos.leekent.tho...alto...pens...eco.trueama.ala.artregardless.knew..tree..use...ads.","..eye..tap.aspen.horsebrits.urbansic.umm.old...pro.arm....henry....tai.tee...cap.rye.eggalpha.videorelay.ended.sen..sky..",".jew....chacave...thuglion.chromeall..reap..dev.eyed....deed.levy....ribs.air..data..leeclassy.pulpaide...redsres....eds.","..laps..penapache..agodistinctionmets..ear..ice..old...ted.owl.hay...tin..ala..pol..amirtransformedhoc..aliensyet..rear..",".dot..flu...rue..litertate.nativehis.cow.lesenters.sir...any.cuz...and.tomatomud.mil.tedarises.bindpanel..ios...get..one.","ham...canoearea..alongneal.stereo..sack.....flu.had.capear.ate.icedye.dim.net.....nope..raging.emmaamino..raintanks...sly",".ant....ana.hair..alec.atlas.rate..utmost...tor.pal.solera.are.unidel.gin.red...vendor..ease.genes.slot..reap.tex....sly.","...ups.trap...sip.haha.phenomenalore..nam...via..sketchadd.foe.ruelesser..era...has..estpowerhouse.owed.inn...sees.psi...",".real...zipmaple..monaedits.booksmis..nas...eco..aisle.sad.ant.est.learn..ace...key..danindia.keepsseen..agreeowl...toss.","..lite..belsailors.oleexploit.aftres..carr......dated....kai.ups....image......cape..aimelk.enhancedee.reactedsad..shes..","..metro.sap..areas.egoorganic.copnan..dart..eye..sri.....tom.spa.....wig..sac..anna..sirsox.imageryale.never..yes.grant..","die..wealthact..entiremeh.abdomenedits..pee...coke........psalm........rail...sat..psychaccuses.roegained..illorders..cap","..any.sri....doe.human..own.alphagel...delayave..mode..les.wow.mag..crib..egotrees...nodounce.sat..metal.ore....spy.led..",".ref..ate...ore..mangaalas.waivedulster..yestee.yen....odd.eco.she....ski.peaana..errorsbarred.okaysteel..del...ask..end.","..scam.pun..stoke.ones.managerialget...pettyole..tis...old.pac.and...wen..moeaware...everemarkable.trip.email..eds.nana..",".tai...icy.villa..thatidols..siteden.han.lea.sen.words....erase....power.foe.sip.ned.bampeel..operaacne..taste.est...meh.","phi...arm..sick..lean.iron.lesson.enemy..sue...ear..end..assists..app..car...bra..adapt.social.pear.shop..semi..est...red",".rec...alassushi..laketitan.humanana.grim...yet..ann....demanding....ark..are...rise.tagerica.youngsole..earnstell...key.","..mos..pep..sire..raidinlet.teslasal..tastedopen.axe.....robbins.....mel.tabsfinite..lieicons.ozonegene..wood..dee..non..","tie...gear.hong..agreeended.gotta...new..wit..tech..onetae.oil.ranawe..leak..san..egg...trade.seatsedged..sire.sees...rye",".kat..jet..once..ear..penetrationsee.hen.ala...hug.olds..bug.nos..spit.yah...aha.sum.akadisappeared..era..deed..den..san.","....hah.two...mini.henoccupationsdrag...nut.dos.jerk...spa.aye.tis...bred.ash.who...axleliabilitiesest.line...the.leg....",".nor..spa...ice..usingaces.animalchairs..evetennis..dye....gun....she..masterpal..empirealbums.amidmoose..rec...wed..era.",".son...yes.lava..bumpsages.zombieper.mix.ace..wrap.try...hes.mar...ben.aura..gel.aim.shealmond.usesslept..felt.eds...odd.","..fat...dimspare...onecirca.freshart..wee...nah..relay.stereotypes.erect..pat...she..oremotto.agileawe...vinylgel...aft..","but...wavedafro..imagetour..range..seize....art.sol.witlie.one.rowape.les.iso....asset..adapt..lessgenie..freeowned...sac","rot..ing...owes.coup..went.error...due..used..edge..season.ons.edshoc..gods..epic..los...seems.gift..slap.sole...lea..nun","..ton..use.shade..novakinda.aideding.rim.and.dog.dip......opera......ala.cub.ice.alt.nostruly.agilesore..matte.pot..eye..","...bro.was.pollen.antssleeps.rareidea..kylie...clan.ops..whining..awe.fate...lease..lowesake.issuedoven.chords.end.yen...","cad...app..owe...gala.pale.remedysylvia..ama...end..singum.sit.engana..aha...sir..noddedpotent.save.nice...tin..not...alt",".pay..fry..tire..leonealma.fungusgloria..ant.sultan......rye.elf......museum.ate..statesmodule.sureamino..eric..tis..set.","ham.jet.ahauni.ugh.nodear.soy.tad..rat..fix...oliver.....recipes.....resist...bat..she..rex.too.alaone.old.dimeds.wee.yea","nay.ago.mudare.lou.onetil.lot.din.elk..psi...lee.fun.....debates.....pea.aha...ash..ken.sal.apt.eggill.via.teasay.eco.sly","..imam.wed...mona.ave..pants.rap..ego..tylersri.ate.unilin.man.adsama.mis.teemetro..bin..tie.pilot..eve.icon...red.news..","..jedi..cap.levin..liejoseph..eraons..algae.bee..beard....crisp....idiot..act.costa..roelid..normaneng..tweet.age..send..","pass..bel..erica.ones.accommodate...tee..god...ish..ups.goa...hes.tar..ago...ama..ios...declaration.slap.tesla..eye..does","..tape.ill..noted.nealboxers.dameuni...genesden..tae.....shields.....ace..torlitre...rueacid.waterspeel.ashes..dry.shot..","opt..sip...pre..usefulsort.corona..rash..rep.cite...massafer.abuseany...holy.uni..data..convey.stopengage..era...rod..dew",".hop....sad.idol.berry.type.alikeits.asks...sis..teens.one.par.act.gypsy..tea...last.unisteel.acre.haram.roar.yea....sly.",".war...gem.wiki..mole.originated.wen.san.via...why.meanache...annaprob.bye...tin.roe.pre.nomination.grab..held.est...ore.",".rat..cry..mere..heel.once.eagle.ethnic..las...sol..evegel.sip.dewaxe..pew...pit..sniper.shine.tore.taco..clip..les..hoc.","toy..huh...one..enact.establishes...boi..axe...sic..sanava.low.estlid..pod...pro..try...supplements.steer..oil...pas..spy","sat.spa.sriera.win.linambient.ads.else..gig..delta.one....ashes....hen.ample..old..beer.tub.pillarsiso.eve.solpew.gym.try","..raj..bam..saga..awayaccommodatemae..awaitsand..nest.....sends.....love..samboiler..areintensifiedterm..nana..sen..nat..",".alt....boi.soon..boataccountantslea.noises.ant..tea....tee...lib....ama..nor.petals.sayforeclosureakin..lord.rec....yes.",".laid..ufo..also..nopeautomobilespre..potenttar..easy......art......aria..srialbert..tincounsellingease..ions..new..duke.",".mos..often.app..leaveanti..datedunits..ser.rec.pest...ads.eat.fat...acre.age.mob..womendoubt..kindaltar..ant.messy..yes.","rid...abs..one..scope.estimation...road..ned.pine...srijams...dogsare...wary.win..airs...strengthen.haunt..ice..leg...pot",".had...bestmaria.orderacres.nastyski.has.....eve.sept...deception...sole.era.....ing.nutvomit.erasealone.ladentens...goa.","lose....howowing.graphuncertainty...mails...enzyme.epicgoo.....oohgrow.corpse...above...representedariel.newlytae....woke","mac.man.braabusive.earnoticed.antguts...tug.ate.pipe.....resting.....disc.row.les...babahum.stripesarm.protesthey.aye.see","for...saga.anime.acuteaspen.deity..eats..tee...let..and.disregard.mon..elf...its..pots..stamp.venustenor.erase.demo...pew","..var..apt.shine..raw.easter.knitchi.fin.ice.ate.voiced...reads...recall.ham.ill.fry.boipier.yogurt.tae..gases.end..age..","..tub.act....ape.dream.plot.deltabrent..alecion.imam...opt.nor.she...ages.toylung..eraseagain.nope.while.all....let.lee..","rot.nah.shyera.ava.peaabs.yes.oilpit...score.ten.alan.....eager.....acne.tee.lucky...macopt.wan.agoroe.ala.illend.yet.let",".side...banannual..liehashtag.oddapp..peace..see.sacks...cat.rib...strip.duo..liner..spatao.donatedain..makersins...para.","win.rom.ownanomaly.thostrands.tortemp..two..era..pie.....notices.....wet..hat..per..darefur.motivesiso.elementrep.del.das","kit...nat..alec.sonic.illustrator...ear..ace...ski..nostab.end.satice..gov...era..ego...responsible.stint.deed..see...gas",".hoc.apt...vine.crows.item.toriesasset...pee...net..est..stained..ama..sam...mel...needypseudo.rare.aspen.gran...see.eng.",".eye.char..even.honestread.apachearrow...aid...rip.app....snaps....awe.cis...one...tutoranimal.rulekarate.ends..deed.das.",".ace..cap..kiev..lied.idle.warrentee.shy.flu..bake.goat.arbitrary.iris.helm..net.ten.alakaiser.snap.seem..acre..sap..les.","..abs...sisspree..hallthree..allyroe..sri...its..talk..pot.day.ion..saul..two...pol..tismere..sceneeyes..hangsgen...eds..",".roe...spy..argue.areaonions.dealage.its.prekent..alas...tao.tor...hail..wattdot.eve.theunit.echoedodor.tours..any...eye.",".est..fat...ala..oniontrio.bonnieold.pot.alteyebrows.....sue.eat.....sprayinggas.air.tooupward.karastage..ant...yes..ish.","..age.ama....goa.nichecrews.acresronnie.rentodd.euro...pea.sri.pol...stop.avanoah.sparedalgae.ironyneedy.ned....dee.gay..",".sub...las.denis.mall.oxide.opticgeo.end.eco.snake.drew...issue...scam.trees.arc.psi.lescirca.naive.meal.enter.est...den.",".its..eye..idiot.gov..colleagues.eleven..new...eng..teaabs.sum.skymel..law...pee..alaska.referenced..pea.snaps..ser..art.","radar...sapomega...airtaped..acne.tad..sir..ser..modifyput.bay.foearmour..ion..eng..act.line..aliasest...mangodos...angel",".gag...act.maria.floraevent.elbowhen.lad.roe..alas.gap....essay....vid.emma..ain.ate.isopedal.namedtwice.dread.see...eds.","..hub...doc.cane..heir.originally.ant.mod...ate.opt.itshes.ale.marads.sad.psi...din.out.adjustable.prob..ness.eye...dye..","opt....tai.wrap..fans.necessarily.yorker.mae...rye..ana.thy...old.phi..nun...art.danish.nutritional.seas..nova.try....wed","..doc..das..solo..into.muddy.snaprib..oscarsalt..ups...yes.any.set...egg..hahdegree..egoidea.rebel.pins..cite..tee..ons..","jaw..spur..ugh..assetsneed.diesel.drew...pre..evil..oreama.toe.napmob..ward..pro...teen.louder.snowentire..tea..snap..sly","..end...telfavour..ayeemergenciesear..pools....casino....las.ser....essays....mater..forgeneticallyate..arcadesad...yet..","...pad..captechno..aleavoided.lieper...oscar.rot.bonus...natural...males.pac.cater...taruni.masterybio..noodlesan..aye...",".hen.gift..taxi.users.eric.sheikhdeter...bio...lea..eng..systems..aha..ego...ref...graphcreate.true.essay.aims..thee.rap.","too....pad.unite.line.belongings...seven.lit...son..eraana.yen.serpeg..sen...per.rises...devastated.lead.stage.est....bow","...spit.lip..shale.ice..collectoracre...ain.chi.owing..tap.pac.ads..tasty.tai.gun...discportfolio..are.alien..res.adds...","..dev..ends.poses.goalarctic.ontoyou.lag.eatemma.must....eco.nah....neon.centcat.hog.loworal.toledomere.erase.pays..eds..",".nat...add.titan..ironaction.musephi.tea.met.eco.glass....wally....solve.eng.tip.ace.oldalto.tattoooven..these.ads...eds.","faced..aka.adore..ins.admin..dip..sac..levin...alto.eraops.ios.setroe.lots...essay..mud..tap..renal.amp..ultra.les..blond","..ain...bro.also...rowallows.boonlie..cream.meg..heed..ana.ted.cos..tram..ate.siege..sheatop.slatedhan...over.abs...tar..","art.ads.prosee.pop.ourhan.per.lee.dub..iso...sri.inn.....erected.....die.ark...est..kay.ala.hue.flylet.eng.tielas.rig.sea",".lag...seas.alan..antisurge.olderore.tabs...lea..dean..old.guy.ash..yell..tao...lets.ufotrade.airedhere..coat.over...sly.","pal..abuse.ore..pasta.log..treatyaside...teeresign..inn..legends..ama..waiterbet...smilestigma..cis.avoid..ate.leads..let",".nas...med.sole.sharespipe.policeash.bin.cat.eater.pays...units...comb.tails.ave.our.oilretina.lonetravel.asks.sly...yes.","..tap..les.scenic.altohomage.birdyup.sly.med.reg.levin..area.pong..gamma.wat.set.aft.thepour.reliedaura.onions.sew..den..","gus....lamaunto...uponyard..enemy.wedding...mae.ing.eggart.spa.tryyes.hug.ham...veteran.ideas..endsours...comaneat....lay","..same..fur..alas..one.electronicbloc..aft..iso.half...ten.all.buy...away.use..elk..eyeswhatsoever.hes..over..ore..hers..","...pal..mis.fauna.nose.ambassadoreve...use..mon.phi.roemud.rat.anyarm.ads.tie..est...iossanitation.acts.lions.yes..ann...","goo.....guyelf...pauseleft..risen..easter...barbie..slyage.mae.toemod..cyprus...adhere..apple..ottoshelf...cowkin.....hon","..eye..mad.raven..owedagenda.raceren..notionest..swat.....newer.....have..feescorer..avapour.shadesalso..alert.dew..had..","wen..pipe..aye.dollarsnew.illegal..eds..alto..rack..est...soils...dom..team..ones..ape..octopus.digrealise.iso..lone..cha","ago.iso.egotor.car.vaneng.endless.nas..ear...ant.oak.....samples.....ios.row...ins..sue.passage.radoil.ion.crypre.cad.eye","rat..apps..ore..neat..willingness.slam...aka.essay..mic....man....apt..yours.meh...spot.predecessor..sigh..eve..edge..sec","few.....tarache..chilenoir.shells..santos...aft.ark.leapal.tai.eattae.inn.are...logged..anyone.nessguess..dropons.....sly",".cups...ben.onset.sagamarina.prosace..bean..cha..sri.....lam.ann.....red..ale..gene..ioskara.ballotiris.trees.den...made.","vet.age.eggava.bus.srinet.sis.san.rep.decay....openly....aka.cis....belief....cured.for.mis.ted.viaate.tae.appyes.elf.lee",".eco..sri..crop..wannahint.maddenact.sit.eat.ariel.apt...inn.eve...abs.plant.flu.def.deeattain.tendroots..ants..rec..its."],"mini":[".wakechinarisesalleybees.",".chopbravoeateneveryreds.",".past.richrodeoeven.pest.",".sept.talepaganally.sees.","has..attictorsosmall..wee",".mil.cometusagebegin.set.",".apps.coilcurlyotto.pest.",".rip.tunedultrabeers.dry.",".baby.ableorbitages.keys.","mack.icon.cubes.tree.east",".swap.lanaringsacne.dear.",".sat.coresalonepasta.res.",".has.malesozonedense.lee.",".bag.curryalgaeblunt.set.","span.errorcombotools.free",".pray.rarecocoaames.dose.",".con.razorarosetoned.les.",".safe.planbeardrare.arms.",".tee.hornsoxidenicer.cad.",".gal.arborrougemusic.pen.",".mob.racerarenagiant.any.",".pub.errorrogueamend.odd.",".bodyterraeldercleanherd.",".pen.torahalivedecay.sal.",".cap.honorangleheels.sly.","apps.real.cater.ripe.lots","beds.aloudgeniescots.trek","..delasideringstreesser..","..legbraveeatenscenetex..",".pic.todayarenaready.sly.",".ana.eventgorgegiven.del.",".sen.solaralivetitan.del.",".sim.annoymontepoets.pro.",".tug.genesaminospoil.one.",".low.relayagilewaves.les.",".top.robinarenagases.hes.",".anna.lootelitenose.dyed.","..addcameoapplesellsaxe..",".amireraseagileruledless.","fame.availcongotight.dots","dame.idol.sonic.beta.eyed","..ramblamelovesarenahen..",".tobyretrousherbleakyard.",".meg.boxerurinetales.les.",".war.serumeaglecruel.yes.","..geostraweraselivesfoe..",".savestraycablealoudmere.",".vote.oursdigitache.mets.","vice.adultnervesaves.lest",".theeproxylanceaddedneal.",".slab.caretonedopen.mesa.",".sun.actorratiocrest.fry.",".pat.soberalonedevon.ser.",".alto.wornvagueiris.sect.","..budscopecanonagentres..","mat..alongstoolsolve..san",".tip.medicarenatract.ash.",".shes.taxipanicolds.lest.",".scum.loredoughyale.ends.","..youiconssaucelinedeng..","fog..inletstolehorse..yen",".gasparguemeritmeetsones.",".beth.raresitesidea.cent.",".sept.paramateraces.tens.",".ooh.taxedasideridge.see.","uses.sort.euros.nova.drew","..visasideshootkillsspa..","hes..examsravenomega..sap",".ned.terraavailreset.red.",".rats.ariagloryelse.eyed.","air..roadsinputaside..dew",".elf.claimabusenorth.was.",".shesstoretopicelectmesa.",".nan.haramaminoteens.sly.",".swap.carerenewanna.peas.",".cis.madamarenareads.sly.",".scum.tunayardselse.peer.","rate.odor.doris.pace.than",".cainshinelastsislesdeer.",".this.hankkellyisle.test.",".chip.lanahollyisle.test.",".cis.canonultrapiers.fly.",".slab.megacoverakin.tent.",".vid.panicalterdirty.dos.","mice.adultnervesaves.lest","news.ethershovetiles.cent",".hinthoneyolderslideeyes.","bowl.erroraboverites.test",".nap.virusagiletesla.res.","con..adorenotedtread..spy","bach.arrowsmilehomes.rest",".easy.litetidesitem.less.",".map.moralericanoses.ned.",".ask.planerolesonset.gas.",".tis.medicarenatract.ale.","aid..ideasdealtsalsa..soy","gig..adapttenoreagle..sly",".low.haramaudiodress.art.","..volshorewiganadulttee..",".act.sportracerirony.tad.",".poembravorisenaminotest.","..gutadorefrogsresetowe..",".phi.proverotoropera.sly.","posh.echo.realm.area.nest",".ship.codewaterarea.yell.",".fun.arrownaivetuned.del.","gut..ashesnervegreen..end","hat..acidsindiereact..les",".that.ricemariaiced.less.","chop.hazelarosepants.mess",".ran.torahobeseninth.nay.","..supkappaalloyrainsant..",".debt.rarenatalamen.yard.","..ayecamelaliasgenreeco..","roam.errorabiderises.test",".mal.eagerstraythese.see.",".wet.mixerarisesells.sea.",".ruinhorseagiletunedsees.",".cub.caredanglopoets.eds.","cash.otto.doors.muse.stew",".fun.setupultrabless.are.",".idle.raidmonksonce.eyes.",".too.pullsabideseven.ser.","..jarstaletapesexactwin..","wins.ideasservehaven.lest",".pee.hornsalivedecor.say.",".cutetonedicinglooselane.","..cueharryimagevibeseds..","crimelemoninputfalseflyer","gov..animeserumpsalm..lea",".con.salonunitepaved.led.","sub..crewsagainretro..sew","goat.acre.legal.aura.ness",".acre.goodnestsonto.star.",".mid.radiooceantrans.ole.","..apttabooelbowsterntoy..","spam.isle.pagan.lana.mesh",".bob.solarariselevin.den.","via..adminslidetenor..old",".afrograinrouteislesnets.",".gridceaseunclefreedfeds.","show.colonalivenever.send",".claypromoeagerstinktend.",".beat.rashpatioiced.gene.",".bay.poresexiletesla.res.","..voltribeeatenstaystel..",".apt.alertdinerdecay.ned.",".parkrelayuntilscalehers.","ben..adopttitlesteer..dam","aye..romantraceskins..let",".add.screwericarelax.sly.","spec.coralawarereset.reds","real.olderabovedoris.went","papa.oval.panic.idea.land","marc.adulttoraherase.else",".for.texaswriteorder.yes.",".lambmediaamongropesants.","bob..overslegittrace..new",".wee.earnscrateonset.ser.",".casecircaasseticonsnone.",".step.halotaxesepic.nest.",".dim.genesultrastein.alt.",".rid.curedalonetense.rye.",".sew.spliturineeaten.yes.","pun..againslidetyler..sad","stat.wiresagiletesla.rest",".bradmouseariseinnerlest.",".vid.tenorindiapoint.meg.",".ama.frameloginusing.eco.","cast.altarslopeholes.west",".untoknownatticnieceelse.","..tomabovelanesarenaned..",".buffterraalienconesowed.",".ken.maniaoptedspecs.are.","hon..aroseratedplead..sly","..nunplaneoasisstatstel..",".sic.manoroddlyelite.yes.",".row.cubicarenabased.les.","lima.atom.medic.menu.slot","rust.isle.guise.acts.lest","gear.ruledarisemovie.send",".boathelloeliteelvesdeer.","..thecaredawardpaddyeye..",".les.sixthintromerit.sap.","..manflamelanesiconsper..",".ages.liveliverever.deny.",".slamshorewavedideasmess.",".grimarenamailsedgessent.","rot..adoptrotorerase..lee","roma.awardinnerleone.draw","..foeironysaucelinesend..","disc.enteralonerents.test",".paw.debitadoresaved.les.","..sitmacroagaintenseeds..","milo.idea.lease.avid.less","down.echo.weeds.area.nest",".boredelayelitemovedowed.",".mob.tapesidealparry.mad.","..sipintrodoriseraseamp..",".fee.meansalgaeelect.art.",".stud.herotangoelse.deed.",".odds.peekpennyiris.tame.",".tow.topicarenadared.has.","..linplateaidesseemssun..",".dig.neveralonestrip.aye.","..ridprideeagleetherlet..",".loanrifleatticfreaktens.",".paw.mariaagentrange.nas.","show.taxesabideridge.teen",".hay.solarunitemoved.res.","guy..animestealpolls..die","laid.acresstonetense.dyed",".bel.sexesalivecolin.wen.","mis..arenaminerasset..eds",".whoatrialrinseatticmess.","mild.amir.naked.gear.eddy",".debtrallyundersceneherd.",".malemariaagentpinesscar.",".bugsmetroaltarslepthere.","shed.carolariseraces.mast","pep..areaswitchscene..red",".swap.lanasingsacne.year.",".del.sexesanimepilot.sen.",".jam.honorangleyells.soy.",".sol.boxerolivetides.del.",".clad.herohavocuses.here.","just.aspenrhinosense.reel",".her.ruledaminomotto.res.",".sack.tirebaronones.odds.",".tips.idleclearheat.isle.",".dub.genuselitematte.yes.","aft..urineromanamend..das","pack.icon.euros.tate.else",".meadrangeindiefieldfade.",".rodesizedalonggenieeyes.",".den.perilimagenoses.ser.","chop.robotoperapests.desk","ease.altarslatetoken.went","..usearsonbuildlineseng..","lay..areasbellesalsa..sol",".pea.crashhorseinner.est.","..bedshapeoasisflickton..",".timepanelabbasclonetext.",".sup.ownerpedrosperm.try.",".goo.hallsasideseven.ser.",".aye.urineneedsinlet.add.",".punt.ariarogeralec.node.","..cupdianeadminmeetssal..","kids.idea.tells.atop.lana","swap.hire.edged.euro.rest","mud..asidelevintrend..res",".mesamadamangledietseasy.","..tadbarcaalarmracesest..",".spotshapepastaalterneed.","real.elderaboverobin.went",".alas.loreelderyoga.eyes.",".else.rowsdigiticon.ease.",".ren.belowunitedated.led.",".wrapshadecocoausersmere.",".car.carolissuestone.end.",".this.hankkellyisle.nest.","..nowcraneounceminedany..",".tae.haramoperapenny.das.",".probshirelandsassetbeer.",".afrotrainabuserolesarts.",".elsecrownrigidiconsbase.",".eddy.raretiresacts.pass.",".sen.panicaftermercy.rye.",".sect.tarapatioitem.gene.",".rug.muralaminosongs.res.",".ufo.brockagreedecay.den.","his..unclestoolhours..tee",".blog.livecameoamir.bets.","poor.atlaswhiteseven.rest","..betshorepariselectcod..","..copsolarawakemessyeds..",".rap.poresoperadenim.sal.","gems.oval.denis.node.tree","flea.earnsstagetesla.reel",".puckvenueentryrailsally.",".ups.craigagreemerge.dye.",".snapstoletailsassetthey.","rap..eraseairedrated..sky","..oohgraveloseraminodas..","mud..asidelegaledits..tee",".halomariaeventtonesscan.",".saga.cladsolidupon.news.",".tina.odorfrostisle.toss.",".for.foxesariseaudit.men.",".cuffmoralericareneweyes.","..mehbravooasisstolesen..","..refoperabasicelectyet..",".trap.wisetightache.pets.",".bindradiourinescotshath.",".cab.solarelitetoken.res.","mama.eric.hints.seek.eddy",".low.razorabovetoned.ren.","..belcrudeoasisdietseds..","hey..oceanshaletorso..son",".bun.tenorelitenotes.wed.",".busywannaorderoceandark.",".dos.babesarenamessy.dee.",".nut.terraorganevent.eds.",".tin.medicarenapratt.ash.","surf.trailagiletesla.desk",".pam.minorunitedemon.ser.",".acts.boreromaneven.pets.",".sap.timerariserents.nos.","sets.atop.threw.isle.cole","grid.rumorerasewages.lest","..awesprayolivefusedage..",".tow.beardessayelite.ash.","taps.awaitcandyorder.ease",".sale.alanblindused.sans.","..tinasiderodeocleanhes..",".got.terraangerdrank.end.","hot..adapthonorargue..ore",".vast.ideaclonealps.mate.","..tadpaolooftentracesol..",".per.taxedericaatlas.yep.","tara.item.plain.acne.show","labs.area.yells.also.seal",".pourverseangelscarytens.",".scan.halojokesever.west.",".boo.mallsabideseven.ser.",".wee.dianeoptedseems.dry.","dub..asidemetalpress..she",".faa.pinchunitenames.led.",".char.holeyatesuser.melt.",".eat.paganericaalloy.yes.","..ashcacheouterpresssad..",".drip.rateladenimam.ears.",".stab.menuwingselse.deer.",".pit.tonedultrabeers.sly.",".bow.rapidarenawords.nas.","mega.earnsstageseven.nerd","..mapflamelakeseventear..",".bus.boltsintelterry.san.",".ken.tyresalivenicer.ear.",".low.delayagilesaves.les.",".rye.boostabusetotal.thy.","goat.orbitagileladen.nest",".rum.donorabidenotes.tel.","load.atlaswhiteseven.rest",".lam.baronabovereset.les.",".hungpatiooptedspecstyre.",".swat.logocoveropen.lent.",".lockbaronaudiobrentears.","para.adoresavedspend.tray","..barvalueamendlistseds..",".alan.roledealtundo.easy.",".sad.rileyadobemenus.set.","aha..terraorganmount..eds","tray.renewanglemalls.lost",".tel.rivalarenamercy.dye.","..benprovelanesagentyes..",".acts.couprustyotto.dear.","uses.sent.elves.lore.sync",".busymontearielinteldeep.",".shesshorelauraarsonpeer.",".inn.snoopunitereset.red.","oil..wrecklogansnake..lee","apps.reap.eaten.rice.lost","..dotadorecanaltrollser..","..reftrollhouseedgedmeh..","lord.operaatticnerve.does",".def.wearyalgaestems.are.","alma.pear.eager.dine.scan",".bob.bluesrangeoccur.ken.",".ammo.beenridesedit.peas.",".mil.vinylindiedoing.rag.","coal.organabidetiles.tens",".shes.taxirobinunit.nets.","bird.odor.nodes.leap.soda","..spylitrearielvinylask..","numb.oral.wiser.none.ends",".grimarosefaultritesones.","bio..islesaliveseven..end",".arm.trailurinegases.yes.",".bob.sexesagilewidow.new.",".swat.heirpaddyedge.eyes.",".pin.renalindiemails.las.",".pas.robotalonedevil.sec.","saul.errorarisetones.west",".han.honorunitememes.yes.",".pets.rarerogueamen.york.",".also.loopyoursunit.mess.","..damsiegeislesclashkey..",".seed.traysurgeidol.tyre.",".chat.rolehumididea.mess.",".app.scrapurinemedia.sec.","..wowgroveraveneventwen..",".wakesolidamonggaugeends.","marc.awarepanelsides.type","grab.euro.organ.auto.lest",".menu.axisurinemist.math.",".meh.tonesindiestern.eds.",".tow.throwarguedealt.end."]};
+
+/* ---------- persistence ---------- */
+var KEY = 'crosswordCipherParty.v1';
+function defaults(){ return {
+  scoreOverallTotal:0, classicScoreTotal:0, blitzScoreTotal:0, miniScoreTotal:0,
+  classicScoreHighest:0, blitzScoreHighest:0, miniScoreHighest:0,
+  classicBestTime:0, blitzBestTime:0, miniBestTime:0,
+  solved:0, lettersPlaced:0, mistakes:0, hintsUsed:0,
+  hintsAvailable:10, scoreLastAcquiredHint:0,
+  crosswordsUsed:[], miniCrosswordsUsed:[],
+  sounds:true, diff:'normal', ach:{}
+};}
+function load(){
+  var d = defaults();
+  try{ var raw = localStorage.getItem(KEY); if(raw){ var o = JSON.parse(raw); for(var k in d) if(k in o) d[k]=o[k]; } }catch(e){}
+  return d;
+}
+var S = load();
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+
+/* ---------- helpers ---------- */
+function $(id){ return document.getElementById(id); }
+function el(tag, cls, html){ var e=document.createElement(tag); if(cls) e.className=cls; if(html!=null) e.innerHTML=html; return e; }
+function fmtTime(s){ s=Math.floor(s); var m=Math.floor(s/60), r=s%60; return m+':'+(r<10?'0':'')+r; }
+function fmtNum(n){ return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function toast(msg, err){
+  var t = el('div','toast'+(err?' err':''),''); t.textContent = msg; $('toasts').appendChild(t);
+  setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 2400);
+}
+
+/* ---------- sound ---------- */
+var ac = null;
+function tone(freq, dur, type, vol, delay){
+  if(!S.sounds) return;
+  try{
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    var t0 = ac.currentTime + (delay||0);
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.type = type||'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol||0.07, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    o.connect(g); g.connect(ac.destination); o.start(t0); o.stop(t0+dur+0.02);
+  }catch(e){}
+}
+var sfx = {
+  good:function(){ tone(660,.12,'triangle'); tone(880,.16,'triangle',.07,.08); },
+  bad:function(){ tone(150,.25,'sawtooth',.06); },
+  pen:function(){ tone(300,.12,'square',.05); tone(220,.18,'square',.05,.1); },
+  hint:function(){ tone(520,.1,'sine'); tone(780,.18,'sine',.07,.1); },
+  win:function(){ [523,659,784,1047].forEach(function(f,i){ tone(f,.22,'triangle',.08,i*.12); }); },
+  tick:function(){ tone(900,.03,'sine',.03); }
+};
+
+/* ---------- achievements ---------- */
+var ACH = [];
+[1,5,10,50,100,200,500].forEach(function(n){ ACH.push({id:'solve'+n, name:'Solver '+n, desc:'Solve '+n+' puzzle'+(n>1?'s':''), val:function(){return S.solved;}, goal:n}); });
+[1,50,100,200,1000,2000,5000].forEach(function(n){ ACH.push({id:'letter'+n, name:'Letters '+n, desc:'Place '+fmtNum(n)+' letter'+(n>1?'s':''), val:function(){return S.lettersPlaced;}, goal:n}); });
+[1,10,50].forEach(function(n){ ACH.push({id:'mistake'+n, name:'Oops '+n, desc:'Make '+n+' mistake'+(n>1?'s':''), val:function(){return S.mistakes;}, goal:n}); });
+[1,2,5,10,20].forEach(function(n){ ACH.push({id:'hint'+n, name:'Helping hand '+n, desc:'Use '+n+' hint'+(n>1?'s':''), val:function(){return S.hintsUsed;}, goal:n}); });
+function checkAch(){
+  ACH.forEach(function(a){
+    if(!S.ach[a.id] && a.val() >= a.goal){ S.ach[a.id] = true; toast('Trophy unlocked: '+a.name); }
+  });
+}
+
+/* ---------- scoring ---------- */
+function addScore(delta){
+  if(!g) return;
+  var before = g.score;
+  g.score = Math.max(0, g.score + delta);
+  var real = g.score - before; // actual change after clamping
+  S.scoreOverallTotal = Math.max(0, S.scoreOverallTotal + real);
+  var k = g.mode + 'ScoreTotal'; S[k] = Math.max(0, S[k] + real);
+  while(S.scoreOverallTotal >= S.scoreLastAcquiredHint + 10000){
+    S.scoreLastAcquiredHint += 10000; S.hintsAvailable++; toast('+1 hint earned!');
+  }
+}
+
+/* ---------- game state ---------- */
+var MODES = { classic:{pool:'classic', size:11, title:'Classic'}, blitz:{pool:'classic', size:11, title:'Blitz'}, mini:{pool:'mini', size:5, title:'Mini'} };
+var REVEAL = { classic:{easy:6,normal:3,hard:1}, blitz:{easy:6,normal:3,hard:1}, mini:{easy:3,normal:2,hard:1} };
+var g = null;
+var ticker = null;
+
+function pickPuzzle(mode){
+  var m = MODES[mode], list = PUZ[m.pool];
+  var key = m.pool === 'mini' ? 'miniCrosswordsUsed' : 'crosswordsUsed';
+  var used = S[key];
+  var free = [];
+  for(var i=0;i<list.length;i++) if(used.indexOf(i) < 0) free.push(i);
+  if(!free.length){ S[key] = used = []; for(i=0;i<list.length;i++) free.push(i); }
+  return free[Math.floor(Math.random()*free.length)];
+}
+
+function startGame(mode, idx){
+  var m = MODES[mode], n = m.size;
+  if(idx == null) idx = pickPuzzle(mode);
+  var str = PUZ[m.pool][idx];
+  var perm = shuffle(Array.apply(null,{length:26}).map(function(_,i){ return i+1; }));
+  var sol = [], num = [], countByLetter = {}, letterOfNum = {}, numCells = {};
+  for(var r=0;r<n;r++){
+    sol.push([]); num.push([]);
+    for(var c=0;c<n;c++){
+      var ch = str.charAt(r*n+c);
+      if(ch === '.'){ sol[r].push(null); num[r].push(null); continue; }
+      var N = perm[ch.charCodeAt(0)-97];
+      sol[r].push(ch); num[r].push(N);
+      letterOfNum[N] = ch; countByLetter[ch] = (countByLetter[ch]||0)+1;
+      (numCells[N] = numCells[N] || []).push([r,c]);
+    }
+  }
+  g = {
+    mode:mode, n:n, idx:idx, sol:sol, num:num, letterOfNum:letterOfNum, numCells:numCells,
+    numbers:Object.keys(letterOfNum).map(Number).sort(function(a,b){return a-b;}),
+    solved:{}, given:{}, hinted:{}, usedLetters:{},
+    sel:null, score:0, mistakes:0, streak:0, elapsed:0, penaltyClock:0,
+    paused:false, over:false, last:Date.now(), placed:0
+  };
+  // reveal starting letters: pick from the most frequent letters
+  var letters = Object.keys(countByLetter).sort(function(a,b){ return countByLetter[b]-countByLetter[a]; });
+  var k = REVEAL[mode][S.diff] || 3;
+  var pool = letters.slice(0, Math.min(letters.length, k+4));
+  shuffle(pool).slice(0,k).forEach(function(L){
+    for(var N in letterOfNum) if(letterOfNum[N] === L){ g.solved[N] = true; g.given[N] = true; g.usedLetters[L] = true; }
+  });
+  buildBoard();
+  selectFirst();
+  show('game');
+  $('gTitle').firstChild.nodeValue = m.title;
+  $('gSub').textContent = 'Puzzle #' + (idx+1);
+  $('penMeter').classList.toggle('hidden', mode !== 'blitz');
+  $('pauseOv').classList.add('hidden'); $('gPause').textContent = 'Pause';
+  closeModal();
+  render();
+  if(ticker) clearInterval(ticker);
+  ticker = setInterval(tick, 200);
+}
+
+function buildBoard(){
+  var b = $('board'); b.innerHTML = '';
+  b.className = 'board n' + g.n;
+  b.style.gridTemplateColumns = 'repeat(' + g.n + ', 1fr)';
+  b.style.gridTemplateRows = 'repeat(' + g.n + ', 1fr)';
+  for(var r=0;r<g.n;r++) for(var c=0;c<g.n;c++){
+    var d = el('div', g.sol[r][c] ? 'cell white' : 'cell block');
+    d.dataset.r = r; d.dataset.c = c;
+    if(g.sol[r][c]){ d.appendChild(el('span','n', String(g.num[r][c]))); d.appendChild(el('span','l','')); d.setAttribute('role','gridcell'); }
+    b.appendChild(d);
+  }
+  // key strip
+  var s = $('strip'); s.innerHTML = '';
+  g.numbers.forEach(function(N){
+    var ch = el('div','chip','<b>'+N+'</b><i></i>'); ch.dataset.n = N; ch.setAttribute('role','button'); ch.tabIndex = 0;
+    s.appendChild(ch);
+  });
+  // keyboard
+  var kb = $('kb'); kb.innerHTML = '';
+  ['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'].forEach(function(row){
+    var rd = el('div','kbrow');
+    row.split('').forEach(function(L){ var k = el('button','key',L); k.dataset.k = L.toLowerCase(); k.type='button'; rd.appendChild(k); });
+    kb.appendChild(rd);
+  });
+}
+
+function cellEl(r,c){ return $('board').children[r*g.n+c]; }
+
+function render(){
+  if(!g) return;
+  var selN = g.sel ? g.num[g.sel[0]][g.sel[1]] : null;
+  for(var r=0;r<g.n;r++) for(var c=0;c<g.n;c++){
+    var N = g.num[r][c]; if(N == null) continue;
+    var e = cellEl(r,c), L = e.lastChild;
+    var cls = 'cell white';
+    var txt = '';
+    if(g.solved[N]){ txt = g.letterOfNum[N].toUpperCase(); if(g.given[N]) cls += ' given'; else if(g.hinted[N]) cls += ' hint'; }
+    if(selN === N) cls += ' same';
+    if(g.sel && g.sel[0]===r && g.sel[1]===c) cls += ' sel';
+    var keep = e.className.match(/\b(pop|bad)\b/);
+    if(keep) cls += ' ' + keep[1];
+    if(e.className !== cls) e.className = cls;
+    if(L.textContent !== txt) L.textContent = txt;
+  }
+  var chips = $('strip').children;
+  for(var i=0;i<chips.length;i++){
+    var n2 = +chips[i].dataset.n, cc = 'chip';
+    if(g.given[n2]) cc += ' given';
+    if(selN === n2) cc += ' on';
+    chips[i].className = cc;
+    chips[i].lastChild.textContent = g.solved[n2] ? g.letterOfNum[n2].toUpperCase() : '';
+  }
+  var keys = $('kb').querySelectorAll('.key');
+  for(i=0;i<keys.length;i++) keys[i].disabled = !!g.usedLetters[keys[i].dataset.k] || g.over;
+  $('iScore').textContent = fmtNum(g.score);
+  $('iTime').textContent = fmtTime(g.elapsed);
+  $('iMist').textContent = g.mistakes;
+  $('iHintN').textContent = S.hintsAvailable;
+  $('iHint').disabled = g.over;
+}
+
+/* ---------- selection ---------- */
+function unsolvedCells(){
+  var out = [];
+  for(var r=0;r<g.n;r++) for(var c=0;c<g.n;c++){ var N=g.num[r][c]; if(N!=null && !g.solved[N]) out.push([r,c]); }
+  return out;
+}
+function selectFirst(){ var u = unsolvedCells(); g.sel = u.length ? u[0] : null; }
+function advance(){
+  var u = unsolvedCells(); if(!u.length){ g.sel = null; return; }
+  if(g.sel){
+    var cur = g.sel[0]*g.n + g.sel[1];
+    for(var i=0;i<u.length;i++) if(u[i][0]*g.n+u[i][1] > cur){ g.sel = u[i]; return; }
+  }
+  g.sel = u[0];
+}
+function selectNumber(N){
+  var cells = g.numCells[N]; if(!cells) return;
+  g.sel = cells[0]; render();
+}
+function move(dr, dc){
+  if(!g || g.over || g.paused) return;
+  if(!g.sel){ g.sel = g.numCells[g.numbers[0]][0]; render(); return; }
+  var r = g.sel[0], c = g.sel[1];
+  for(;;){
+    r += dr; c += dc;
+    if(r<0||c<0||r>=g.n||c>=g.n) return;
+    if(g.sol[r][c]){ g.sel = [r,c]; render(); return; }
+  }
+}
+
+/* ---------- actions ---------- */
+function flash(N, cls){
+  (g.numCells[N]||[]).forEach(function(p){
+    var e = cellEl(p[0],p[1]); e.classList.remove('pop','bad'); void e.offsetWidth; e.classList.add(cls);
+    setTimeout(function(){ e.classList.remove(cls); }, 420);
+  });
+}
+function solveNumber(N){
+  g.solved[N] = true; g.usedLetters[g.letterOfNum[N]] = true;
+}
+function place(letter){
+  if(!g || g.over || g.paused) return;
+  if(!g.sel){ toast('Pick a square first'); return; }
+  var N = g.num[g.sel[0]][g.sel[1]];
+  if(g.solved[N]){ advance(); render(); return; }
+  var L = letter.toLowerCase();
+  if(g.usedLetters[L]){ toast('That letter is already placed', true); return; }
+  if(g.letterOfNum[N] === L){
+    solveNumber(N); g.streak++; g.placed++; S.lettersPlaced++;
+    var cells = g.numCells[N].length;
+    var mult = (g.mode === 'blitz' ? 1.5 : 1) * Math.min(g.streak, 5);
+    var gain = Math.round(50 * cells * mult);
+    addScore(gain);
+    sfx.good();
+    advance(); render(); flash(N, 'pop');
+    checkAch(); save();
+    if(Object.keys(g.solved).length === g.numbers.length) win();
+  } else {
+    g.mistakes++; S.mistakes++; g.streak = 0;
+    addScore(-150);
+    sfx.bad(); render(); flash(N, 'bad');
+    checkAch(); save();
+  }
+}
+function useHint(){
+  if(!g || g.over || g.paused) return;
+  if(S.hintsAvailable <= 0){ toast('No hints left. Earn one every 10,000 points.', true); return; }
+  var N = g.sel ? g.num[g.sel[0]][g.sel[1]] : null;
+  if(N == null || g.solved[N]){
+    var best = null, bestC = -1;
+    g.numbers.forEach(function(M){ if(!g.solved[M] && g.numCells[M].length > bestC){ best = M; bestC = g.numCells[M].length; } });
+    N = best;
+  }
+  if(N == null) return;
+  S.hintsAvailable--; S.hintsUsed++; g.hinted[N] = true;
+  solveNumber(N);
+  sfx.hint();
+  if(g.sel && g.num[g.sel[0]][g.sel[1]] === N) advance();
+  render(); flash(N,'pop');
+  checkAch(); save();
+  if(Object.keys(g.solved).length === g.numbers.length) win();
+}
+var BLITZ_PENALTY = 300;
+function applyPenalty(){
+  var before = g.score;
+  addScore(-BLITZ_PENALTY);
+  sfx.pen(); toast('Time penalty: -' + fmtNum(before - g.score) + ' points', true);
+  var s = $('iScore').parentNode; s.classList.add('hit'); setTimeout(function(){ s.classList.remove('hit'); }, 600);
+  render();
+}
+function tick(){
+  if(!g) return;
+  var now = Date.now(), dt = Math.min(1000, now - g.last); g.last = now;
+  if(g.paused || g.over) return;
+  g.elapsed += dt/1000;
+  if(g.mode === 'blitz'){
+    g.penaltyClock += dt/1000;
+    if(g.penaltyClock >= 20){ g.penaltyClock -= 20; applyPenalty(); }
+    $('penBar').style.width = Math.min(100, g.penaltyClock/20*100) + '%';
+  }
+  $('iTime').textContent = fmtTime(g.elapsed);
+}
+function setPaused(p){
+  if(!g || g.over) return;
+  g.paused = p; g.last = Date.now();
+  $('pauseOv').classList.toggle('hidden', !p);
+  $('gPause').textContent = p ? 'Resume' : 'Pause';
+}
+
+/* ---------- win ---------- */
+function win(){
+  g.over = true;
+  var secs = Math.floor(g.elapsed), bonus;
+  if(g.mode === 'mini') bonus = Math.max(100, 600 - 2*secs);
+  else bonus = Math.max(300, 3000 - 3*secs);
+  if(g.mode === 'blitz') bonus = Math.round(bonus*1.5);
+  addScore(bonus);
+  S.solved++;
+  var hk = g.mode + 'ScoreHighest'; if(g.score > S[hk]) S[hk] = g.score;
+  var tk = g.mode + 'BestTime'; if(!S[tk] || secs < S[tk]) S[tk] = secs;
+  var pk = MODES[g.mode].pool === 'mini' ? 'miniCrosswordsUsed' : 'crosswordsUsed';
+  if(S[pk].indexOf(g.idx) < 0) S[pk].push(g.idx);
+  checkAch(); save();
+  sfx.win(); confetti(); render();
+  var mode = g.mode;
+  var html = '<h2>Puzzle solved!</h2><div class="big">' + fmtNum(g.score) + '</div>' +
+    '<div class="kv"><span>Time</span><b>' + fmtTime(g.elapsed) + '</b>' +
+    '<span>Time bonus</span><b>+' + fmtNum(bonus) + '</b>' +
+    '<span>Mistakes</span><b>' + g.mistakes + '</b>' +
+    '<span>Best score (' + MODES[mode].title + ')</span><b>' + fmtNum(S[hk]) + '</b></div>';
+  openModal(html, [
+    {label:'Home', fn:function(){ closeModal(); goHome(); }},
+    {label:'Next puzzle', primary:true, fn:function(){ startGame(mode); }}
+  ]);
+}
+function confetti(){
+  var box = $('confetti'), colors = ['#ffcf3f','#2ec4b6','#ff4f8b','#fffaf0','#8e6bff'];
+  for(var i=0;i<60;i++){
+    var p = document.createElement('i');
+    p.style.left = Math.random()*100 + 'vw'; p.style.background = colors[i%colors.length];
+    p.style.animationDuration = (1.8 + Math.random()*1.8) + 's'; p.style.animationDelay = (Math.random()*.5) + 's';
+    box.appendChild(p);
+    (function(x){ setTimeout(function(){ if(x.parentNode) x.parentNode.removeChild(x); }, 4200); })(p);
+  }
+}
+
+/* ---------- modal & navigation ---------- */
+function openModal(html, buttons){
+  var d = $('dlg'); d.innerHTML = html;
+  var row = el('div','row');
+  buttons.forEach(function(b){ var x = el('button','btn'+(b.primary?' primary':''), b.label); x.type='button'; x.addEventListener('click', b.fn); row.appendChild(x); });
+  d.appendChild(row); $('modal').classList.remove('hidden');
+  var first = row.lastChild; if(first) first.focus();
+}
+function closeModal(){ $('modal').classList.add('hidden'); }
+function show(id){
+  ['home','game','stats','ach'].forEach(function(s){ $(s).classList.toggle('hidden', s !== id); });
+  window.scrollTo(0,0);
+}
+function goHome(){
+  if(ticker){ clearInterval(ticker); ticker = null; }
+  g = null; show('home'); refreshHome();
+}
+function refreshHome(){
+  var b = $('diffSeg').children;
+  for(var i=0;i<b.length;i++) b[i].classList.toggle('on', b[i].dataset.d === S.diff);
+  $('btnSound').textContent = 'Sound: ' + (S.sounds ? 'on' : 'off');
+}
+function showStats(){
+  var cards = [
+    ['Puzzles solved', S.solved], ['Total score', fmtNum(S.scoreOverallTotal)],
+    ['Best Classic', fmtNum(S.classicScoreHighest)], ['Best Blitz', fmtNum(S.blitzScoreHighest)], ['Best Mini', fmtNum(S.miniScoreHighest)],
+    ['Fastest Classic', S.classicBestTime ? fmtTime(S.classicBestTime) : '-'], ['Fastest Blitz', S.blitzBestTime ? fmtTime(S.blitzBestTime) : '-'], ['Fastest Mini', S.miniBestTime ? fmtTime(S.miniBestTime) : '-'],
+    ['Letters placed', fmtNum(S.lettersPlaced)], ['Mistakes', fmtNum(S.mistakes)], ['Hints used', S.hintsUsed], ['Hints available', S.hintsAvailable]
+  ];
+  var box = $('statCards'); box.innerHTML = '';
+  cards.forEach(function(c){ box.appendChild(el('div','card','<b>'+c[1]+'</b><span>'+c[0]+'</span>')); });
+  show('stats');
+}
+function showAch(){
+  var box = $('achList'); box.innerHTML = '';
+  ACH.forEach(function(a){
+    var v = Math.min(a.val(), a.goal), done = !!S.ach[a.id];
+    var d = el('div','a'+(done?' done':''), '<b>'+(done?'★ ':'')+a.name+'</b><span>'+a.desc+'</span><div class="bar"><i style="width:'+Math.round(v/a.goal*100)+'%"></i></div>');
+    box.appendChild(d);
+  });
+  show('ach');
+}
+function howTo(){
+  openModal('<h2>How to play</h2><ul>' +
+    '<li>Every square has a number from 1 to 26. Each number stands for one letter, and the same number is always the same letter.</li>' +
+    '<li>There are no clues. The grid is a normal crossword, so use word shapes and the letters already shown to work out the rest.</li>' +
+    '<li>Tap a square and press a letter. A right guess fills every square with that number. A wrong guess costs points.</li>' +
+    '<li>Hints reveal one number. You earn a new hint every 10,000 points.</li>' +
+    '<li><b>Blitz:</b> every 20 seconds you lose 300 points, so solve fast. Your score never drops below zero.</li></ul>',
+    [{label:'Got it', primary:true, fn:closeModal}]);
+}
+
+/* ---------- wiring ---------- */
+function buildLogo(){
+  var box = $('logoTiles'), words = ['CLUELESS','CROSSWORDS'], ci = 0;
+  words.forEach(function(w, wi){
+    w.split('').forEach(function(ch, i){
+      var t = el('div','tile t'+((ci++ % 3)+1), ch); t.appendChild(el('small','', String(((ci*7)%26)+1))); box.appendChild(t);
+    });
+    if(wi < words.length-1) box.appendChild(el('div','tile gap',''));
+  });
+}
+document.querySelectorAll('.mode').forEach(function(b){ b.addEventListener('click', function(){ startGame(b.dataset.mode); }); });
+$('diffSeg').addEventListener('click', function(e){ var d = e.target.dataset && e.target.dataset.d; if(d){ S.diff = d; save(); refreshHome(); } });
+$('btnStats').addEventListener('click', showStats);
+$('btnAch').addEventListener('click', showAch);
+$('btnHow').addEventListener('click', howTo);
+$('btnSound').addEventListener('click', function(){ S.sounds = !S.sounds; save(); refreshHome(); if(S.sounds) sfx.tick(); });
+document.querySelectorAll('[data-back]').forEach(function(b){ b.addEventListener('click', goHome); });
+$('gHome').addEventListener('click', function(){
+  if(g && !g.over){
+    setPaused(true);
+    openModal('<h2>Leave this puzzle?</h2><p>Your progress on this grid will be lost.</p>', [
+      {label:'Keep playing', primary:true, fn:function(){ closeModal(); setPaused(false); }},
+      {label:'Leave', fn:function(){ closeModal(); goHome(); }}
+    ]);
+  } else goHome();
+});
+$('gPause').addEventListener('click', function(){ if(g) setPaused(!g.paused); });
+$('pauseOv').addEventListener('click', function(){ setPaused(false); });
+$('iHint').addEventListener('click', useHint);
+$('board').addEventListener('click', function(e){
+  if(!g || g.over || g.paused) return;
+  var t = e.target.closest('.cell'); if(!t || !t.classList.contains('white')) return;
+  g.sel = [+t.dataset.r, +t.dataset.c]; render();
+});
+$('strip').addEventListener('click', function(e){ var t = e.target.closest('.chip'); if(t && g && !g.over && !g.paused) selectNumber(+t.dataset.n); });
+$('kb').addEventListener('click', function(e){ var t = e.target.closest('.key'); if(t) place(t.dataset.k); });
+document.addEventListener('keydown', function(e){
+  if(e.ctrlKey || e.metaKey || e.altKey) return;
+  if(e.key === 'Escape'){ if(!$('modal').classList.contains('hidden')) closeModal(); return; }
+  if(!g || $('game').classList.contains('hidden') || !$('modal').classList.contains('hidden')) return;
+  var k = e.key;
+  if(/^[a-zA-Z]$/.test(k)){ place(k); e.preventDefault(); }
+  else if(k === 'ArrowUp'){ move(-1,0); e.preventDefault(); }
+  else if(k === 'ArrowDown'){ move(1,0); e.preventDefault(); }
+  else if(k === 'ArrowLeft'){ move(0,-1); e.preventDefault(); }
+  else if(k === 'ArrowRight'){ move(0,1); e.preventDefault(); }
+});
+document.addEventListener('visibilitychange', function(){ if(document.hidden && g && !g.over) setPaused(true); });
+
+buildLogo(); refreshHome(); checkAch();
+window.CCP = { state:function(){ return g; }, stats:function(){ return S; }, start:startGame };
+})();
+</script>
+<script>if('serviceWorker' in navigator && /^https?:/.test(location.protocol)){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
+</body>
+</html>
